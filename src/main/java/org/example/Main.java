@@ -10,7 +10,7 @@ public class Main {
     }
 
     static Connection connect(){
-        String url = "jdbc:postgresql://localhost:5432/Assignment3";
+        String url = "jdbc:postgresql://localhost:5432/FinalProject";
         String user = "postgres";
         String password = "postgres";
         Connection connection = null;
