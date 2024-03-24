@@ -9,27 +9,35 @@ import java.util.Properties;
 
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)  {
+        connect();
 
-        String rootPath = Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath();
-        String postgresPropPath = rootPath + "postgres.properties";
-
-        Properties postgresProps = new Properties();
-        postgresProps.load(new FileInputStream(postgresPropPath));
-
-        String user = postgresProps.getProperty("user");
-        String password = postgresProps.getProperty("password");
-
-        System.out.println("User: " + user);
-        System.out.println("Password: " + password);
+        System.out.println("Hello World!");
     }
 
+    public static Properties getProperties() {
+        try
+        {
+            String rootPath = Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath();
+            String postgresPropPath = rootPath + "postgres.properties";
+            Properties props = new Properties();
+            props.load(new FileInputStream(postgresPropPath));
+            return props;
+        }
+        catch (IOException e)
+        {
+            System.out.println("Error reading properties file");
+            e.printStackTrace();
+            return null;
+        }
+    }
 
-
-    static Connection connect(){
+    static Connection connect() {
         String url = "jdbc:postgresql://localhost:5432/FinalProject";
-        String user = "postgres";
-        String password = "root";
+        Properties props = getProperties();
+        assert props != null;
+        String user = props.getProperty("user");
+        String password = props.getProperty("password");
         Connection connection = null;
         try{
             Class.forName("org.postgresql.Driver");
