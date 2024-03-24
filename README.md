@@ -1,4 +1,4 @@
-# COMP 3005 Final Project - Version 1
+# COMP 3005 Final Project - Version 2
 Group Members Jordon, Nahom, Paul
 
 #### Student Numbers:
