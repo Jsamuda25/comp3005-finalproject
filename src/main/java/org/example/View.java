@@ -1,13 +1,10 @@
 package org.example;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class View {
 
-    private final Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner = InputScanner.getInstance();
     private static final List<String> LOGIN_MENU_OPTIONS = Arrays.asList("Login", "Register", "Exit");
     private static final List<String> MEMBER_MENU_OPTIONS = Arrays.asList("User Registration", "Profile Management", "Dashboard Display", "Schedule Management", "Logout");
     private static final List<String> TRAINER_MENU_OPTIONS = Arrays.asList("Schedule Management", "Member Profile Viewing", "Logout");

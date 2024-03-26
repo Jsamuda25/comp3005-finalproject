@@ -25,7 +25,19 @@ public class HealthFitnessController {
      */
     private void trainer() {
         // TODO: handle trainer menu
-        int choice = view.trainerMenu();
+        while (true) {
+            int choice = view.trainerMenu();
+            if (choice == 1) {
+                Trainer.scheduleManagement(healthFitness.getCurrentUser());
+            } else if (choice == 2) {
+                //Trainer.viewSchedule(healthFitness.getCurrentUser());
+            } else if (choice == 3) {
+                break;
+            } else {
+                System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+            }
+        }
+
     }
 
     /**

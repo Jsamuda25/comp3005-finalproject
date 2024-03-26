@@ -22,7 +22,7 @@ public class HealthFitness {
         connection = PostgresConnection.connect();
         String username = loginInfo.get(0);
         String password = loginInfo.get(1);
-        String query = "SELECT username,password FROM users WHERE username=? AND password=?";
+        String query = "SELECT id, username, typeofuser FROM users WHERE username=? AND password=?";
 
         try{
             PreparedStatement statement = connection.prepareStatement(query);
@@ -34,6 +34,7 @@ public class HealthFitness {
             if(res.next()){
 
                 String user = res.getString("username");
+                int userId = res.getInt("id");
                 query = "SELECT typeofuser FROM users WHERE username = ?";
                 statement = connection.prepareStatement(query);
                 statement.setString(1, user);
@@ -42,14 +43,14 @@ public class HealthFitness {
 
                 if(res.getString("typeofuser") .equals("MEMBER")){
                     System.out.println(res.getString("typeofuser"));
-                    currentUser = new User(username, UserType.MEMBER);
+                    currentUser = new User(username, UserType.MEMBER,userId);
                 }
                 else if(res.getString("typeofuser").equals("ADMIN")){
-                    currentUser = new User(username, UserType.ADMIN);
+                    currentUser = new User(username, UserType.ADMIN, userId);
                 }
                 else{
                     System.out.println(res.getString("typeofuser"));
-                    currentUser = new User(username, UserType.TRAINER);
+                    currentUser = new User(username, UserType.TRAINER, userId);
                 }
             }
             else{
@@ -71,7 +72,7 @@ public class HealthFitness {
      */
     public boolean register(List<String> registerInfo) {
         // TODO: implement register logic
-        currentUser = new User("123", UserType.ADMIN);
+        currentUser = new User("123", UserType.ADMIN, 1);
 
         return true;
     }
@@ -82,5 +83,8 @@ public class HealthFitness {
 
     }
 
+    public User getCurrentUser() {
+        return currentUser;
+    }
 
 }
