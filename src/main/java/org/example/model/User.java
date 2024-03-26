@@ -14,4 +14,6 @@ public class User {
     public UserType getUserType() {
         return userType;
     }
+
+    public String getUserId(){ return userId;}
 }
