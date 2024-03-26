@@ -106,7 +106,6 @@ public class HealthFitness {
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         int userId = generatedKeys.getInt(1);
-                        System.out.println("User created with ID: " + userId);
                         currentUser = new User(username, UserType.ADMIN, userId);
                     } else {
                         throw new SQLException("Creating user failed, no ID obtained.");
