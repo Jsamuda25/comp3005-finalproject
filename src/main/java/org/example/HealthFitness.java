@@ -61,6 +61,7 @@ public class HealthFitness {
         }
         catch(Exception e){
             System.out.println(e);
+            return false;
         }
         return true;
     }
@@ -71,8 +72,40 @@ public class HealthFitness {
      * @return true if the user is successfully registered, false otherwise
      */
     public boolean register(List<String> registerInfo) {
-        // TODO: implement register logic
-        currentUser = new User("123", UserType.ADMIN, 1);
+        connection = PostgresConnection.connect();
+        String first_name = registerInfo.get(0);
+        String last_name = registerInfo.get(1);
+        String username = registerInfo.get(2);
+        String password = registerInfo.get(3);
+        String name = first_name + " " + last_name;
+
+
+        try{
+            String query = "SELECT username FROM users WHERE username=?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setString(1, username);
+            ResultSet res = statement.executeQuery();
+
+            if(res.next() && res.getString("username").equals(username)){
+                System.out.println("This username is taken, please choose a different one.");
+                return false;
+            }
+            else{
+                query = "INSERT INTO users(username, password, name, typeofuser) " +
+                        "VALUES(?,?,?,?)";
+                statement = connection.prepareStatement(query);
+                statement.setString(1, username);
+                statement.setString(2, password);
+                statement.setString(3, name);
+                statement.setObject(4, UserType.ADMIN, Types.OTHER); // must update console input to include a user type input
+                statement.executeUpdate();
+                currentUser = new User(username, UserType.ADMIN, currentUser.getUserID());
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return false;
+        }
 
         return true;
     }
