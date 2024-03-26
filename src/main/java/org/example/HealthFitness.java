@@ -93,13 +93,25 @@ public class HealthFitness {
             else{
                 query = "INSERT INTO users(username, password, name, typeofuser) " +
                         "VALUES(?,?,?,?)";
-                statement = connection.prepareStatement(query);
+                statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
                 statement.setString(1, username);
                 statement.setString(2, password);
                 statement.setString(3, name);
-                statement.setObject(4, UserType.ADMIN, Types.OTHER); // must update console input to include a user type input
-                statement.executeUpdate();
-                currentUser = new User(username, UserType.ADMIN, currentUser.getUserID());
+                statement.setObject(4, UserType.ADMIN, Types.OTHER);
+                int affectedRows = statement.executeUpdate();
+                if (affectedRows == 0) {
+                    throw new SQLException("Creating user failed, no rows affected.");
+                }
+
+                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int userId = generatedKeys.getInt(1);
+                        System.out.println("User created with ID: " + userId);
+                        currentUser = new User(username, UserType.ADMIN, userId);
+                    } else {
+                        throw new SQLException("Creating user failed, no ID obtained.");
+                    }
+                }
             }
         }
         catch (Exception e){
