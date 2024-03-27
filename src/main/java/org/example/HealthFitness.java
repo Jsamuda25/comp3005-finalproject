@@ -60,7 +60,7 @@ public class HealthFitness {
             }
         }
         catch(Exception e){
-            System.out.println(e);
+            System.out.println("Error logging in");
             return false;
         }
         return true;
@@ -71,6 +71,7 @@ public class HealthFitness {
      * @param registerInfo the user's registration information
      * @return true if the user is successfully registered, false otherwise
      */
+    @SuppressWarnings("JpaQueryApiInspection")
     public boolean register(List<String> registerInfo) {
         connection = PostgresConnection.connect();
         String first_name = registerInfo.get(0);
@@ -114,11 +115,15 @@ public class HealthFitness {
             }
         }
         catch (Exception e){
-            System.out.println(e);
+            System.err.println("Error registering user");
             return false;
         }
 
         return true;
+    }
+
+    public void logout() {
+        currentUser = null;
     }
 
     public UserType getUserType() {

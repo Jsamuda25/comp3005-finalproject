@@ -4,7 +4,7 @@ import java.util.*;
 
 public class View {
 
-    private final Scanner scanner = InputScanner.getInstance();
+    private final static Scanner scanner = InputScanner.getInstance();
     private static final List<String> LOGIN_MENU_OPTIONS = Arrays.asList("Login", "Register", "Exit");
     private static final List<String> MEMBER_MENU_OPTIONS = Arrays.asList("User Registration", "Profile Management", "Dashboard Display", "Schedule Management", "Logout");
     private static final List<String> TRAINER_MENU_OPTIONS = Arrays.asList("Schedule Management", "Member Profile Viewing", "Logout");
@@ -14,6 +14,8 @@ public class View {
         System.out.println("Welcome to the Health and Fitness System!");
     }
 
+    public void logoutMessage() { System.out.println("You have been logged out."); }
+
     /**
      * Displays the login menu and returns the user's choice
      * @return the user's choice
@@ -21,16 +23,15 @@ public class View {
     public int welcomeMenu() {
         menu(LOGIN_MENU_OPTIONS);
         System.out.print("Enter your choice: ");
-        int choice = scanner.nextInt();
+        Optional<Integer> choice = getIntegerInput();
 
-        // Validate user input
-        while (choice < 1 || choice > 3) {
-            System.out.println("Invalid choice. Please enter a number between 1 and 3.");
-            choice = scanner.nextInt();
-            scanner.nextLine();
+        while (choice.isEmpty() || choice.get() < 1 || choice.get() > LOGIN_MENU_OPTIONS.size()) {
+            System.out.println("Invalid choice. Please enter a number between 1 and " + LOGIN_MENU_OPTIONS.size() + ".");
+            choice = getIntegerInput();
         }
+
         scanner.nextLine();
-        return choice;
+        return choice.get();
     }
 
     /**
@@ -99,18 +100,31 @@ public class View {
     }
 
     /**
+     * Displays the room booking menu and returns the user's choice
+     * @return the user's choice
+     */
+    public int roomBookingMenu() {
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("View Room Bookings", "Cancel Room Booking", "Back"));
+        menu(options);
+        return getChoice(options);
+    }
+
+    /**
      * Helper method that prompts the user to enter a choice
      * @param options the list of options to choose from
      * @return the user's choice
      */
     private int getChoice(List<String> options) {
-        int choice = scanner.nextInt();
-        while (choice < 1 || choice > options.size()) {
+        System.out.print("Enter your choice: ");
+        Optional<Integer> choice = getIntegerInput();
+
+        while (choice.isEmpty() || choice.get() < 1 || choice.get() > options.size()) {
             System.out.println("Invalid choice. Please enter a number between 1 and " + options.size() + ".");
-            choice = scanner.nextInt();
+            choice = getIntegerInput();
         }
+
         scanner.nextLine();
-        return choice;
+        return choice.get();
     }
 
     /**
@@ -124,7 +138,26 @@ public class View {
         }
     }
 
+    /**
+     * Helper method that gets an integer input from the user
+     * @return an optional containing the integer input if it is valid
+     */
+    public static Optional<Integer> getIntegerInput() {
+        try {
+            return Optional.of(scanner.nextInt());
+        } catch (InputMismatchException e) {
+            scanner.nextLine();
+            return Optional.empty();
+        }
+    }
+
     public void close() {
         scanner.close();
+    }
+
+    public int billingAndPaymentMenu() {
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("View Billing and Payment", "Process Payment", "Back"));
+        menu(options);
+        return getChoice(options);
     }
 }

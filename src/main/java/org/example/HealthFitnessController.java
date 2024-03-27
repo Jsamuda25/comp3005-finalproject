@@ -1,6 +1,8 @@
 package org.example;
 
 import java.util.List;
+
+import org.example.model.Admin;
 import org.example.model.User.UserType;
 
 public class HealthFitnessController {
@@ -45,7 +47,59 @@ public class HealthFitnessController {
      */
     private void admin() {
         // TODO: handle admin menu
-        int choice = view.adminMenu();
+        Admin admin = new Admin(healthFitness.getCurrentUser());
+
+        while(true) {
+            switch (view.adminMenu()) {
+                case 1: adminRoomBooking(admin);
+                    break;
+                case 2: admin.equipmentMaintenanceMonitoring();
+                    break;
+                case 3: admin.classScheduleUpdating();
+                    break;
+                case 4: billingAndPaymentProcessing(admin);
+                    break;
+                case 5: return;
+                default: System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Handles the menu for billing and payment processing for the admin
+     * @param admin the admin user
+     */
+    private void billingAndPaymentProcessing(Admin admin) {
+        while(true) {
+            switch (view.billingAndPaymentMenu()) {
+                case 1: admin.viewBillingAndPayment();
+                    break;
+                case 2: admin.processPayment();
+                    break;
+                case 3: return;
+                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Handles the room booking for the admin
+     * @param admin the admin user
+     */
+    private void adminRoomBooking(Admin admin) {
+        while(true) {
+            switch (view.roomBookingMenu()) {
+                case 1: admin.viewRoomBookings();
+                    break;
+                case 2: admin.cancelRoomBooking();
+                    break;
+                case 3: return;
+                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                    break;
+            }
+        }
     }
 
     /**
@@ -58,14 +112,11 @@ public class HealthFitnessController {
 
         while (choice != 3) {
             switch (choice) {
-                case 1:
-                    success = login();
+                case 1: success = login();
                     break;
-                case 2:
-                    success = register();
+                case 2: success = register();
                     break;
-                default:
-                    System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
                     break;
             }
             if (success) {
@@ -98,6 +149,8 @@ public class HealthFitnessController {
                 System.out.println("Invalid user type");
                 break;
         }
+        view.logoutMessage();
+        healthFitness.logout();
     }
 
     /**
