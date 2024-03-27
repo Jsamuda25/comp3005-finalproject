@@ -60,7 +60,7 @@ public class HealthFitness {
             }
         }
         catch(Exception e){
-            System.out.println(e);
+            System.out.println("Error logging in");
             return false;
         }
         return true;
@@ -115,7 +115,7 @@ public class HealthFitness {
             }
         }
         catch (Exception e){
-            e.printStackTrace();
+            System.err.println("Error registering user");
             return false;
         }
 
