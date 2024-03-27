@@ -6,7 +6,7 @@ public class View {
 
     private final static Scanner scanner = InputScanner.getInstance();
     private static final List<String> LOGIN_MENU_OPTIONS = Arrays.asList("Login", "Register", "Exit");
-    private static final List<String> MEMBER_MENU_OPTIONS = Arrays.asList("User Registration", "Profile Management", "Dashboard Display", "Schedule Management", "Logout");
+    private static final List<String> MEMBER_MENU_OPTIONS = Arrays.asList("Profile Management", "Dashboard Display", "Schedule Management", "Logout");
     private static final List<String> TRAINER_MENU_OPTIONS = Arrays.asList("Schedule Management", "Member Profile Viewing", "Logout");
     private static final List<String> ADMIN_MENU_OPTIONS = Arrays.asList("Room Booking Management", "Equipment Maintenance Monitoring", "Class Schedule Updating", "Billing and Payment Processing", "Logout");
 

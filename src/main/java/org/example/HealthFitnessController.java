@@ -3,6 +3,7 @@ package org.example;
 import java.util.List;
 
 import org.example.model.Admin;
+import org.example.model.User;
 import org.example.model.User.UserType;
 
 public class HealthFitnessController {
@@ -19,7 +20,21 @@ public class HealthFitnessController {
      */
     private void member() {
         // TODO: handle member menu
-        int choice = view.memberMenu();
+        while(true){
+            switch(view.memberMenu()){
+                case 1:
+                    User.profileManagement();
+                    break;
+                case 2:
+                    User.displayInfo();
+                    break;
+                case 3:
+                    User.scheduleManagement();
+                    break;
+                case 4:
+                    return;
+            }
+        }
     }
 
     /**

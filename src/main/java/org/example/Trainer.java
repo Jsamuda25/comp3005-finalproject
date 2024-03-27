@@ -9,6 +9,7 @@ public class Trainer {
     private static final Connection connection = PostgresConnection.connect();
     private static PreparedStatement preparedStatement;
 
+
     public static void scheduleManagement(User user) {
         Scanner scanner = InputScanner.getInstance();
 
