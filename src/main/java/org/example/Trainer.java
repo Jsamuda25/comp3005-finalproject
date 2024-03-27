@@ -1,43 +1,55 @@
 package org.example;
 import java.sql.*;
 import java.util.Scanner;
-
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 import org.example.model.User;
 
 public class Trainer {
-    public static Connection connection = PostgresConnection.connect();
-    private static PreparedStatement preparedStatement; 
+    private static final Connection connection = PostgresConnection.connect();
+    private static PreparedStatement preparedStatement;
 
-    public static void scheduleManagement(User user){
+    public static void scheduleManagement(User user) {
         Scanner scanner = InputScanner.getInstance();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setLenient(false);
+
+        Timestamp startTime = null;
+        Timestamp endTime = null;
+
         System.out.println("Enter start time (format: YYYY-MM-DD HH:MM:SS):");
-        String startTime = scanner.nextLine().trim();
+        String startInput = scanner.nextLine().trim();
 
         System.out.println("Enter end time (format: YYYY-MM-DD HH:MM:SS):");
-        String endTime = scanner.nextLine().trim();
+        String endInput = scanner.nextLine().trim();
+
+        try {
+            startTime = new Timestamp(dateFormat.parse(startInput).getTime());
+            endTime = new Timestamp(dateFormat.parse(endInput).getTime());
+        } catch (ParseException e) {
+            System.out.println("Invalid timestamp format.");
+            return;
+        }
+
         String query = "INSERT INTO TrainerAvailability (trainer_id, start_time, end_time) VALUES (?, ?, ?)";
         try {
-            // Prepare SQL statement
             preparedStatement = connection.prepareStatement(query);
-            
-            // Assuming trainerId is retrieved or stored elsewhere
-            int trainerId = user.getUserID(); // Example trainer ID
-            
-            // Set parameters
-            preparedStatement.setInt(1, trainerId);
-            preparedStatement.setTimestamp(2, Timestamp.valueOf(startTime));
-            preparedStatement.setTimestamp(3, Timestamp.valueOf(endTime));
 
-            // Execute the statement
+            int trainerId = user.getUserID();
+
+            preparedStatement.setInt(1, trainerId);
+            preparedStatement.setTimestamp(2, startTime);
+            preparedStatement.setTimestamp(3, endTime);
+
             preparedStatement.executeUpdate();
-            
+
             System.out.println("Trainer availability set successfully!");
 
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             try {
-                // Close resources
                 if (preparedStatement != null) {
                     preparedStatement.close();
                 }

@@ -28,18 +28,20 @@ public class HealthFitnessController {
     private void trainer() {
         // TODO: handle trainer menu
         while (true) {
-            int choice = view.trainerMenu();
-            if (choice == 1) {
-                Trainer.scheduleManagement(healthFitness.getCurrentUser());
-            } else if (choice == 2) {
-                Trainer.viewMemberProfile();
-            } else if (choice == 3) {
-                break;
-            } else {
-                System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+            switch (view.trainerMenu()) {
+                case 1:
+                    Trainer.scheduleManagement(healthFitness.getCurrentUser());
+                    break;
+                case 2:
+                    Trainer.viewMemberProfile();
+                    break;
+                case 3:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                    break;
             }
         }
-
     }
 
     /**
