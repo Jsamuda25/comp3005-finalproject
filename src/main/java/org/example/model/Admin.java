@@ -1,11 +1,15 @@
 package org.example.model;
 
+import org.example.InputScanner;
 import org.example.Main;
 import org.example.View;
-
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.Scanner;
 
 public class Admin extends User {
 
@@ -250,6 +254,377 @@ public class Admin extends User {
     }
 
     public void classScheduleUpdating() {
+        while (true){
+            System.out.println("1. create new class");
+            System.out.println("2. edit existing class room");
+            System.out.println("3. edit existing class time/date");
+            System.out.println("4. edit existing class trainer");
+            System.out.println("5. edit existing class name");
+            System.out.println("6. view classes");
+            System.out.println("7. exit");
+            Optional<Integer> choice = View.getIntegerInput();
+            while (choice.isEmpty() || choice.get() < 1 || choice.get() > 7) {
+                System.out.println("Invalid choice. Please enter a number between 1 and 7.");
+                choice = View.getIntegerInput();
+            }
+            switch (choice.get()){
+                case 1:
+                    createNewClass();
+                    break;
+                case 2:
+                    editClassRoom();
+                    break;
+                case 3:
+                    editClassTimeDate();
+                    break;
+                case 4:
+                    editClassTrainer();
+                    break;
+                case 5:
+                    editClassName();
+                    break;
+                case 6:
+                    viewClasses();
+                case 7:
+                    System.out.println("exiting");
+                    return;
+            }
+
+        }
+
+    }
+
+    public void createNewClass() {
+        try {
+            Scanner scanner = InputScanner.getInstance();
+
+            System.out.println("Enter class details:");
+            System.out.print("Trainer ID: ");
+            int trainerId = scanner.nextInt();
+            scanner.nextLine();
+            System.out.print("Class Name: ");
+            String className = scanner.nextLine();
+            System.out.print("Start Date (YYYY-MM-DD HH:MM:SS): ");
+            String startDateStr = scanner.nextLine();
+            Timestamp startDate = Timestamp.valueOf(startDateStr);
+            System.out.print("End Date (YYYY-MM-DD HH:MM:SS): ");
+            String endDateStr = scanner.nextLine();
+            Timestamp endDate = Timestamp.valueOf(endDateStr);
+            System.out.print("Room ID: ");
+            int roomId = scanner.nextInt();
+
+            // Check if trainer is available
+            if (!isTrainerAvailable(trainerId, startDate, endDate)) {
+                System.out.println("Trainer is not available during this time.");
+                return;
+            }
+
+            // Check if room is available
+            if (!isRoomAvailable(roomId, startDate, endDate)) {
+                System.out.println("Room is not available during this time.");
+                return;
+            }
+
+            // Insert new class into the database
+            String classInsertQuery = "INSERT INTO Class (trainer_id, class_name, start_date, end_date, room_id) " +
+                    "VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement classInsertStatement = connection.prepareStatement(classInsertQuery, Statement.RETURN_GENERATED_KEYS);
+            classInsertStatement.setInt(1, trainerId);
+            classInsertStatement.setString(2, className);
+            classInsertStatement.setTimestamp(3, startDate);
+            classInsertStatement.setTimestamp(4, endDate);
+            classInsertStatement.setInt(5, roomId);
+            classInsertStatement.executeUpdate();
+
+            // Get the generated class ID
+            ResultSet generatedKeys = classInsertStatement.getGeneratedKeys();
+            int classId;
+            if (generatedKeys.next()) {
+                classId = generatedKeys.getInt(1);
+            } else {
+                throw new SQLException("Failed to create class, no ID obtained.");
+            }
+
+            // Insert entry into RoomBooking
+            String roomBookingInsertQuery = "INSERT INTO RoomBooking (typeOfBooking, session_id, class_id, date, start_time, end_time) " +
+                    "VALUES (1, NULL, ?, ?, ?, ?)";
+            PreparedStatement roomBookingInsertStatement = connection.prepareStatement(roomBookingInsertQuery);
+            roomBookingInsertStatement.setInt(1, classId);
+            roomBookingInsertStatement.setDate(2, new Date(startDate.getTime()));
+            roomBookingInsertStatement.setTime(3, new Time(startDate.getTime()));
+            roomBookingInsertStatement.setTime(4, new Time(endDate.getTime()));
+            roomBookingInsertStatement.executeUpdate();
+
+            System.out.println("New class created successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error creating new class: " + e.getMessage());
+        }
+    }
+
+    public void editClassTimeDate() {
+        try {
+            viewClasses();
+
+            Scanner scanner = InputScanner.getInstance();
+
+            System.out.print("Enter the ID of the class to change the time/date for: ");
+            int classId = scanner.nextInt();
+            scanner.nextLine();
+
+            Timestamp newStartTime = null;
+            Timestamp newEndTime = null;
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            dateFormat.setLenient(false);
+
+            System.out.println("Enter new start time (format: YYYY-MM-DD HH:MM:SS):");
+            String startInput = scanner.nextLine().trim();
+
+            System.out.println("Enter new end time (format: YYYY-MM-DD HH:MM:SS):");
+            String endInput = scanner.nextLine().trim();
+
+            try {
+                newStartTime = new Timestamp(dateFormat.parse(startInput).getTime());
+                newEndTime = new Timestamp(dateFormat.parse(endInput).getTime());
+            } catch (ParseException e) {
+                System.out.println("Invalid timestamp format.");
+                return;
+            }
+
+            // Get new room ID
+            System.out.print("Enter the new Room ID: ");
+            int newRoomId = scanner.nextInt();
+
+            // Get class trainer ID
+            int trainerId;
+            String getTrainerIdQuery = "SELECT trainer_id FROM Class WHERE class_id = ?";
+            PreparedStatement getTrainerIdStatement = connection.prepareStatement(getTrainerIdQuery);
+            getTrainerIdStatement.setInt(1, classId);
+            ResultSet trainerIdResultSet = getTrainerIdStatement.executeQuery();
+            if (trainerIdResultSet.next()) {
+                trainerId = trainerIdResultSet.getInt("trainer_id");
+            } else {
+                System.out.println("Class with ID " + classId + " not found.");
+                return;
+            }
+
+            // Check if new start time, end time, and room are available
+            if (!isTrainerAvailable(trainerId, newStartTime, newEndTime)) {
+                System.out.println("The trainer is not available during this time.");
+                return;
+            }
+
+            if (!isRoomAvailable(newRoomId, newStartTime, newEndTime)) {
+                System.out.println("The new room is not available during this time.");
+                return;
+            }
+
+            // Update class time/date and room
+            String updateClassTimeRoomQuery = "UPDATE Class SET start_date = ?, end_date = ?, room_id = ? WHERE class_id = ?";
+            PreparedStatement updateClassTimeRoomStatement = connection.prepareStatement(updateClassTimeRoomQuery);
+            updateClassTimeRoomStatement.setTimestamp(1, newStartTime);
+            updateClassTimeRoomStatement.setTimestamp(2, newEndTime);
+            updateClassTimeRoomStatement.setInt(3, newRoomId);
+            updateClassTimeRoomStatement.setInt(4, classId);
+            updateClassTimeRoomStatement.executeUpdate();
+
+            // Update RoomBooking table
+            String updateRoomBookingQuery = "UPDATE RoomBooking SET date = ?, start_time = ?, end_time = ?, room_id = ? WHERE class_id = ?";
+            PreparedStatement updateRoomBookingStatement = connection.prepareStatement(updateRoomBookingQuery);
+            updateRoomBookingStatement.setDate(1, new Date(newStartTime.getTime()));
+            updateRoomBookingStatement.setTime(2, new Time(newStartTime.getTime()));
+            updateRoomBookingStatement.setTime(3, new Time(newEndTime.getTime()));
+            updateRoomBookingStatement.setInt(4, newRoomId);
+            updateRoomBookingStatement.setInt(5, classId);
+            updateRoomBookingStatement.executeUpdate();
+
+            System.out.println("Class time/date and room updated successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error editing class time/date and room: " + e.getMessage());
+        }
+    }
+
+    public void editClassName() {
+        try {
+            viewClasses();
+
+            Scanner scanner = InputScanner.getInstance();
+
+            // Get class ID to edit name
+            System.out.print("Enter the ID of the class to change the name for: ");
+            int classId = scanner.nextInt();
+            scanner.nextLine();
+
+            // Get new class name
+            System.out.print("Enter the new class name: ");
+            String newClassName = scanner.nextLine();
+
+            // Update class name in the database
+            String updateClassNameQuery = "UPDATE Class SET class_name = ? WHERE class_id = ?";
+            PreparedStatement updateClassNameStatement = connection.prepareStatement(updateClassNameQuery);
+            updateClassNameStatement.setString(1, newClassName);
+            updateClassNameStatement.setInt(2, classId);
+            updateClassNameStatement.executeUpdate();
+
+            System.out.println("Class name updated successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error editing class name: " + e.getMessage());
+        }
+    }
+
+
+    public void editClassRoom() {
+        try {
+            viewClasses();
+
+            Scanner scanner = InputScanner.getInstance();
+
+            System.out.print("Enter the ID of the class to change the room for: ");
+            int classId = scanner.nextInt();
+
+            System.out.print("Enter the new Room ID: ");
+            int newRoomId = scanner.nextInt();
+
+            // Get class start and end time
+            Timestamp classStartTime = null;
+            Timestamp classEndTime = null;
+            String getClassTimeQuery = "SELECT start_date, end_date FROM Class WHERE class_id = ?";
+            PreparedStatement getClassTimeStatement = connection.prepareStatement(getClassTimeQuery);
+            getClassTimeStatement.setInt(1, classId);
+            ResultSet classTimeResultSet = getClassTimeStatement.executeQuery();
+            if (classTimeResultSet.next()) {
+                classStartTime = classTimeResultSet.getTimestamp("start_date");
+                classEndTime = classTimeResultSet.getTimestamp("end_date");
+            } else {
+                System.out.println("Class with ID " + classId + " not found.");
+                return;
+            }
+
+            // Check if new room is available during class time
+            if (!isRoomAvailable(newRoomId, classStartTime, classEndTime)) {
+                System.out.println("The new room is not available during this time.");
+                return;
+            }
+
+            // Update class room
+            String updateClassRoomQuery = "UPDATE Class SET room_id = ? WHERE class_id = ?";
+            PreparedStatement updateClassRoomStatement = connection.prepareStatement(updateClassRoomQuery);
+            updateClassRoomStatement.setInt(1, newRoomId);
+            updateClassRoomStatement.setInt(2, classId);
+            updateClassRoomStatement.executeUpdate();
+
+            // Update RoomBooking table
+            String updateRoomBookingQuery = "UPDATE RoomBooking SET room_id = ? WHERE class_id = ?";
+            PreparedStatement updateRoomBookingStatement = connection.prepareStatement(updateRoomBookingQuery);
+            updateRoomBookingStatement.setInt(1, newRoomId);
+            updateRoomBookingStatement.setInt(2, classId);
+            updateRoomBookingStatement.executeUpdate();
+
+            System.out.println("Class room updated successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error editing class room: " + e.getMessage());
+        }
+    }
+
+    public void editClassTrainer() {
+        try {
+            viewClasses();
+
+            Scanner scanner = InputScanner.getInstance();
+
+            System.out.print("Enter the ID of the class to change the trainer for: ");
+            int classId = scanner.nextInt();
+
+            System.out.print("Enter the new Trainer ID: ");
+            int newTrainerId = scanner.nextInt();
+
+            // Get class start and end time
+            Timestamp classStartTime = null;
+            Timestamp classEndTime = null;
+            String getClassTimeQuery = "SELECT start_date, end_date FROM Class WHERE class_id = ?";
+            PreparedStatement getClassTimeStatement = connection.prepareStatement(getClassTimeQuery);
+            getClassTimeStatement.setInt(1, classId);
+            ResultSet classTimeResultSet = getClassTimeStatement.executeQuery();
+            if (classTimeResultSet.next()) {
+                classStartTime = classTimeResultSet.getTimestamp("start_date");
+                classEndTime = classTimeResultSet.getTimestamp("end_date");
+            } else {
+                System.out.println("Class with ID " + classId + " not found.");
+                return;
+            }
+
+            // Check if new trainer is available during class time
+            if (!isTrainerAvailable(newTrainerId, classStartTime, classEndTime)) {
+                System.out.println("The new trainer is not available during this time.");
+                return;
+            }
+
+            // Update class trainer
+            String updateClassTrainerQuery = "UPDATE Class SET trainer_id = ? WHERE class_id = ?";
+            PreparedStatement updateClassTrainerStatement = connection.prepareStatement(updateClassTrainerQuery);
+            updateClassTrainerStatement.setInt(1, newTrainerId);
+            updateClassTrainerStatement.setInt(2, classId);
+            updateClassTrainerStatement.executeUpdate();
+
+            System.out.println("Class trainer updated successfully.");
+        } catch (SQLException e) {
+            System.err.println("Error editing class trainer: " + e.getMessage());
+        }
+    }
+
+
+
+
+    private boolean isTrainerAvailable(int trainerId, Timestamp startDate, Timestamp endDate) throws SQLException {
+        String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " +
+                "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, trainerId);
+        preparedStatement.setTimestamp(2, endDate);
+        preparedStatement.setTimestamp(3, startDate);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        int count = resultSet.getInt("count");
+        return count > 0;
+    }
+
+
+    private boolean isRoomAvailable(int roomId, Timestamp startDate, Timestamp endDate) throws SQLException {
+        String query = "SELECT COUNT(*) AS count FROM RoomBooking " +
+                "WHERE room_id = ? AND date = ? " +
+                "AND ? < end_time AND start_time < ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, roomId);
+        preparedStatement.setDate(2, new Date(startDate.getTime()));
+        preparedStatement.setTime(3, new Time(endDate.getTime()));
+        preparedStatement.setTime(4, new Time(startDate.getTime()));
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        int count = resultSet.getInt("count");
+        return count == 0;
+    }
+
+
+
+    private void viewClasses(){
+        try {
+            String query = "SELECT * FROM class ORDER BY start_date";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                System.out.println("Scheduled classes:");
+                System.out.println("Class ID: " + resultSet.getInt("class_id"));
+                System.out.println("Class Name: " + resultSet.getString("class_name"));
+                System.out.println("Trainer ID: " + resultSet.getInt("trainer_id"));
+                System.out.println("Start Date: " + resultSet.getDate("start_date"));
+                System.out.println("End Date: " + resultSet.getDate("end_date"));
+                System.out.println("room ID: " + resultSet.getInt("room_id"));
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving class data.");
+            return;
+        }
     }
 
     public void viewBillingAndPayment() {
