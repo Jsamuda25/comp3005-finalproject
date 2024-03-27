@@ -49,7 +49,6 @@ public class HealthFitnessController {
         // TODO: handle admin menu
         Admin admin = new Admin(healthFitness.getCurrentUser());
 
-        outer:
         while(true) {
             switch (view.adminMenu()) {
                 case 1: adminRoomBooking(admin);
