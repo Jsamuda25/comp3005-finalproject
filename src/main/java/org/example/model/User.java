@@ -2,7 +2,7 @@ package org.example.model;
 
 // You can inherit from this class to create a new user type
 public class User {
-    public enum UserType { ADMIN, MEMBER, TRAINER }
+    public enum UserType { MEMBER, TRAINER, ADMIN }
     private final String userName;  // From the database
     public UserType userType;
 
@@ -12,6 +12,12 @@ public class User {
         this.userName = userId;
         this.userType = userType;
         this.userID = userID;
+    }
+
+    public User(User user){
+        this.userName = user.getUserName();
+        this.userType = user.getUserType();
+        this.userID = user.getUserID();
     }
 
     public UserType getUserType() {
