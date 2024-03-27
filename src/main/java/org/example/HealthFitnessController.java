@@ -30,7 +30,7 @@ public class HealthFitnessController {
             if (choice == 1) {
                 Trainer.scheduleManagement(healthFitness.getCurrentUser());
             } else if (choice == 2) {
-                //Trainer.viewSchedule(healthFitness.getCurrentUser());
+                Trainer.viewMemberProfile();
             } else if (choice == 3) {
                 break;
             } else {
