@@ -115,8 +115,36 @@ public class Member extends User{
 
     }
 
-    public void modifyPassword(){
+    public boolean modifyPassword(){
+        Scanner scanner = InputScanner.getInstance();
+        System.out.print("Input new password: ");
+        scanner.nextLine();
+        String newPass = scanner.nextLine();
+        connection = PostgresConnection.connect();
 
+        try{
+            String query = "UPDATE users SET password = ? WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, newPass);
+            statement.setInt(2, getUserID());
+
+            int result = statement.executeUpdate();
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next() && gKeys.getString(3).equals(newPass)) {
+                        System.out.println("Your password has been updated");
+                    }
+                } catch (Exception e) {
+                    System.out.println(e);
+                    return false;
+                }
+            }
+
+        }
+        catch(Exception e){
+
+        }
+        return  true;
     }
 
     public void modifyName(){
