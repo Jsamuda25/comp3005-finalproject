@@ -10,7 +10,7 @@ import java.util.Scanner;
 // You can inherit from this class to create a new user type
 public class User {
     public enum UserType { MEMBER, TRAINER, ADMIN }
-    private final String userName;  // From the database
+    private String userName;  // From the database
     public UserType userType;
     private final int userID;
 
@@ -33,5 +33,9 @@ public class User {
     public String getUserName(){ return userName;}
 
     public int getUserID(){ return userID;}
+
+    public void setUserName(String uname){
+        userName = uname;
+    }
 
 }
