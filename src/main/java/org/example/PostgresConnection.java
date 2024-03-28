@@ -32,7 +32,7 @@ public class PostgresConnection {
      * Connects to the PostgreSQL database
      * @return the connection
      */
-    static Connection connect() {
+    public static Connection connect() {
         String url = "jdbc:postgresql://localhost:5432/FinalProject";
         Properties props = getProperties();
         assert props != null;
