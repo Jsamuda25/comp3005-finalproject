@@ -97,7 +97,7 @@ public class Member extends User{
                     try (ResultSet gKeys = statement.getGeneratedKeys()) {
                         if (gKeys.next()) {
                             String username = gKeys.getString(2);
-                            System.out.println("Your new username is: " + username);
+                            System.out.println("Your new username is: " + username + "\n");
                             setUserName(username);
                         }
                     } catch (Exception e) {
@@ -132,7 +132,7 @@ public class Member extends User{
             if (result > 0) {
                 try (ResultSet gKeys = statement.getGeneratedKeys()) {
                     if (gKeys.next() && gKeys.getString(3).equals(newPass)) {
-                        System.out.println("Your password has been updated");
+                        System.out.println("Your password has been updated\n");
                     }
                 } catch (Exception e) {
                     System.out.println(e);
@@ -142,12 +142,47 @@ public class Member extends User{
 
         }
         catch(Exception e){
-
+            System.out.println(e);
+            return  false;
         }
         return  true;
     }
 
-    public void modifyName(){
+    public boolean modifyName(){
+        Scanner scanner = InputScanner.getInstance();
+        scanner.nextLine();
+        System.out.print("Enter first name: ");
+        String first_name = scanner.nextLine().trim();
+        System.out.print("Enter last name: ");
+        String last_name = scanner.nextLine().trim();
+
+        String new_name = first_name + " " + last_name;
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "UPDATE users SET name = ? WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, new_name);
+            statement.setInt(2, getUserID());
+
+            int result = statement.executeUpdate();
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next() && gKeys.getString(4).equals(new_name)) {
+                        System.out.println("Your name has been updated to: " + new_name + "\n");
+                    }
+                } catch (Exception e) {
+                    System.out.println(e);
+                    return false;
+                }
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return false;
+        }
+
+        return true;
 
     }
 
