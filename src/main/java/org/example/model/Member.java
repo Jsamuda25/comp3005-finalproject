@@ -48,6 +48,7 @@ public class Member extends User{
         System.out.println("1. Username");
         System.out.println("2. Password");
         System.out.println("3. Name");
+        System.out.println("4. Exit");
         System.out.print("Enter your choice as a number: ");
         int response = scanner.nextInt();
 
@@ -61,6 +62,9 @@ public class Member extends User{
         }
         else if(response == 3){
             modifyName();
+            return;
+        }
+        else if(response==4){
             return;
         }
         else{
@@ -195,6 +199,10 @@ public class Member extends User{
         System.out.println("Update Health Metrics");
     }
 
+
+    public void addFitnessGoals(){
+
+    }
     //helper function for profileManagement()
     public void updateFitnessGoals(){
         viewFitnessGoals();
@@ -211,7 +219,7 @@ public class Member extends User{
         System.out.println("1. Title");
         System.out.println("2. Description");
         System.out.println("3. End date");
-        System.out.println("4. Status");
+        System.out.println("4. Completion");
         System.out.println("5. Exit menu");
         System.out.print("Enter choice as integer: ");
         int response = scanner.nextInt();
@@ -238,7 +246,18 @@ public class Member extends User{
         else if(response == 4){
             System.out.println("Enter new status (0 = Incomplete, 1 = Complete): ");
             int status = scanner.nextInt();
-            updateStatus(goal_id, status);
+            boolean stat = false;
+
+            if(status==0){
+                stat = false;
+            }
+            else if(status ==1){
+                stat = true;
+            }
+            else{
+                System.out.println("Invalid value for status:");
+            }
+            updateStatus(goal_id, stat);
             updateFitnessGoals();
         }
         else if (response==5){
@@ -274,6 +293,7 @@ public class Member extends User{
         }
         catch (Exception e){
             System.out.println(e);
+            return;
         }
     }
 
@@ -298,6 +318,7 @@ public class Member extends User{
             }
             else{
                 System.out.println("Goal was not updated.\n");
+                return;
             }
         }
         catch (Exception e){
@@ -331,19 +352,16 @@ public class Member extends User{
         }
         catch (Exception e){
             System.out.println(e);
+            return;
         }
     }
 
-    public void updateStatus(int id, int status){
-        if (status < 0  || status > 1){
-            System.out.println("Invalid status value.");
-            return;
-        }
+    public void updateStatus(int id, boolean completed){
 
         try{
-            String query = "UPDATE fitnessgoal SET status = ? WHERE goalid = ? AND userid = ?";
+            String query = "UPDATE fitnessgoal SET completed = ? WHERE goalid = ? AND userid = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-            statement.setInt(1, status);
+            statement.setBoolean(1, completed);
             statement.setInt(2, id);
             statement.setInt(3, getUserID());
 
@@ -370,7 +388,7 @@ public class Member extends User{
         connection = PostgresConnection.connect();
         System.out.println("Your fitness goals: ");
         try{
-            String query = "SELECT goalid, title, value, enddate, status FROM fitnessgoal WHERE userid = ?";
+            String query = "SELECT goalid, title, value, enddate, completed FROM fitnessgoal WHERE userid = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
             ResultSet res = statement.executeQuery();
@@ -380,11 +398,12 @@ public class Member extends User{
                 System.out.println("Title: " + res.getString("title"));
                 System.out.println("Description: " + res.getString("value"));
                 System.out.println("End date: " + res.getDate("enddate"));
-                System.out.println("Completion status: " + res.getInt("status") + "\n");
+                System.out.println("Completed (T/F): " + res.getBoolean("completed") + "\n");
             }
         }
         catch(Exception e){
             System.out.println(e);
+            return;
         }
 
     }
