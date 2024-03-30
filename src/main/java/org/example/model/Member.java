@@ -227,7 +227,7 @@ public class Member extends User{
     public void viewHealthMetrics(){
         System.out.println("Your Health Metrics");
         connection = PostgresConnection.connect();
-        String query = "SELECT metric_type, value, unit, notes, date_recorded FROM healthmetrics WHERE member_id = ?";
+        String query = "SELECT metric_id, metric_type, value, unit, notes, date_recorded FROM healthmetrics WHERE member_id = ?";
         try{
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
@@ -235,7 +235,8 @@ public class Member extends User{
 
             while(res.next()){
                 System.out.println("---------");
-                System.out.println("Metric: " + res.getString("metric_type"));
+                System.out.println("ID: " + res.getInt("metric_id"));
+                System.out.println("Metric Type: " + res.getString("metric_type"));
                 System.out.println("Value: " + res.getDouble("value") + "" + res.getString("unit"));
                 System.out.println("Note: " + res.getString("notes"));
                 System.out.println("Date recorded: " + res.getDate("date_recorded") + "\n");
@@ -249,6 +250,55 @@ public class Member extends User{
     }
 
     public void editHealthMetrics(){
+        viewHealthMetrics();
+        Scanner scanner = InputScanner.getInstance();
+        System.out.print("Provide the ID of the metric you would like to edit, otherwise input 0: ");
+        int metric_id = scanner.nextInt();
+        scanner.nextLine();
+
+        if(metric_id == 0){
+            return;
+        }
+
+        System.out.println("Which field would you like to change?");
+        System.out.println("1. Metric Type");
+        System.out.println("2. Value");
+        System.out.println("3. Unit");
+        System.out.println("4. Note");
+        System.out.println("5. Exit");
+        System.out.print("Enter choice as integer: ");
+
+        int response = scanner.nextInt();
+        scanner.nextLine();
+        if(response == 1){
+            System.out.print("Enter new metric type: ");
+            String metric = scanner.nextLine();
+            updateMetricType(metric_id, metric);
+        }
+        else if(response == 2){
+            System.out.print("Enter new metric value: ");
+            Double val = scanner.nextDouble();
+            updateMetricValue(metric_id, val);
+            scanner.nextLine();
+
+        }
+        else if(response == 3){
+            System.out.print("Enter new metric unit: ");
+            String unit = scanner.nextLine();
+            updateMetricUnit(metric_id, unit);
+
+        }
+        else if(response == 4){
+            System.out.print("Enter new metric note: ");
+            String note = scanner.nextLine();
+            updateMetricNote(metric_id, note);
+        }
+        else if(response == 5){
+            return;
+        }
+        else{
+            return;
+        }
 
     }
 
@@ -287,6 +337,125 @@ public class Member extends User{
     }
 
 
+    public void updateMetricType(int id, String metric_type){
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "UPDATE healthmetrics SET metric_type = ? WHERE metric_id = ? AND member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, metric_type);
+            statement.setInt(2, id);
+            statement.setInt(3, getUserID());
+
+            int result = statement.executeUpdate();
+
+            if(result > 0){
+                try(ResultSet gKeys = statement.getGeneratedKeys()){
+                    if(gKeys.next()){
+                        System.out.println("This metric has been updated.");
+                    }
+                }
+            }
+            else{
+                System.out.println("Metric was not updated.\n");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+    }
+
+    public void updateMetricValue(int id, Double value){
+
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "UPDATE healthmetrics SET value = ? WHERE metric_id = ? AND member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setDouble(1, value);
+            statement.setInt(2, id);
+            statement.setInt(3, getUserID());
+
+            int result = statement.executeUpdate();
+
+            if(result > 0){
+                try(ResultSet gKeys = statement.getGeneratedKeys()){
+                    if(gKeys.next()){
+                        System.out.println("This metric has been updated.");
+                    }
+                }
+            }
+            else{
+                System.out.println("Metric was not updated.\n");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+    }
+
+    public  void updateMetricUnit(int id, String unit){
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "UPDATE healthmetrics SET unit = ? WHERE metric_id = ? AND member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, unit);
+            statement.setInt(2, id);
+            statement.setInt(3, getUserID());
+
+            int result = statement.executeUpdate();
+
+            if(result > 0){
+                try(ResultSet gKeys = statement.getGeneratedKeys()){
+                    if(gKeys.next()){
+                        System.out.println("This metric has been updated.");
+                    }
+                }
+            }
+            else{
+                System.out.println("Metric was not updated.\n");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+    }
+
+    public void updateMetricNote(int id, String note){
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "UPDATE healthmetrics SET notes = ? WHERE metric_id = ? AND member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, note);
+            statement.setInt(2, id);
+            statement.setInt(3, getUserID());
+
+            int result = statement.executeUpdate();
+
+            if(result > 0){
+                try(ResultSet gKeys = statement.getGeneratedKeys()){
+                    if(gKeys.next()){
+                        System.out.println("This metric has been updated.");
+                    }
+                }
+            }
+            else{
+                System.out.println("Metric was not updated.\n");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+    }
+
     public void selectFitnessFunction(){
         System.out.println("Fitness Goals Menu");
         System.out.println("1. View Fitness Goals");
@@ -314,7 +483,6 @@ public class Member extends User{
         }
 
     }
-
 
 
     public void addFitnessGoals(){
