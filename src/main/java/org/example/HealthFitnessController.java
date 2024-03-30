@@ -1,11 +1,11 @@
 package org.example;
 
-import java.util.List;
-
 import org.example.model.Admin;
 import org.example.model.Member;
-import org.example.model.User;
+import org.example.model.Trainer;
 import org.example.model.User.UserType;
+
+import java.util.List;
 
 public class HealthFitnessController {
     private final HealthFitness healthFitness;
@@ -22,19 +22,22 @@ public class HealthFitnessController {
     private void member() {
         // TODO: handle member menu
         Member member = new Member(healthFitness.getCurrentUser());
-        while(true){
-            switch(view.memberMenu()){
+        while (true) {
+            switch (view.memberMenu()) {
                 case 1:
                     member.profileManagement();
                     break;
                 case 2:
-                    member.displayInfo();
+                    memberDashBoardDisplay(member);
                     break;
                 case 3:
                     member.scheduleManagement();
                     break;
                 case 4:
                     return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 4.");
+                    break;
             }
         }
     }
@@ -68,18 +71,50 @@ public class HealthFitnessController {
         // TODO: handle admin menu
         Admin admin = new Admin(healthFitness.getCurrentUser());
 
-        while(true) {
+        while (true) {
             switch (view.adminMenu()) {
-                case 1: adminRoomBooking(admin);
+                case 1:
+                    adminRoomBooking(admin);
                     break;
-                case 2: admin.equipmentMaintenanceMonitoring();
+                case 2:
+                    admin.equipmentMaintenanceMonitoring();
                     break;
-                case 3: admin.classScheduleUpdating();
+                case 3:
+                    admin.classScheduleUpdating();
                     break;
-                case 4: billingAndPaymentProcessing(admin);
+                case 4:
+                    billingAndPaymentProcessing(admin);
                     break;
-                case 5: return;
-                default: System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 5.");
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Displays the member dashboard
+     *
+     * @param member the member user
+     */
+    private void memberDashBoardDisplay(Member member) {
+        while (true) {
+            switch (view.memberDashboardMenu()) {
+                case 1:
+                    member.viewExerciseRoutines();
+                    break;
+                case 2:
+                    member.viewFitnessAchievements();
+                    break;
+                case 3:
+                    member.viewHealthStatistics();
+                    break;
+                case 4:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 4.");
                     break;
             }
         }
@@ -87,17 +122,22 @@ public class HealthFitnessController {
 
     /**
      * Handles the menu for billing and payment processing for the admin
+     *
      * @param admin the admin user
      */
     private void billingAndPaymentProcessing(Admin admin) {
-        while(true) {
+        while (true) {
             switch (view.billingAndPaymentMenu()) {
-                case 1: admin.viewBillingAndPayment();
+                case 1:
+                    admin.viewBillingAndPayment();
                     break;
-                case 2: admin.processPayment();
+                case 2:
+                    admin.processPayment();
                     break;
-                case 3: return;
-                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                case 3:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 3.");
                     break;
             }
         }
@@ -105,17 +145,22 @@ public class HealthFitnessController {
 
     /**
      * Handles the room booking for the admin
+     *
      * @param admin the admin user
      */
     private void adminRoomBooking(Admin admin) {
-        while(true) {
+        while (true) {
             switch (view.roomBookingMenu()) {
-                case 1: admin.viewRoomBookings();
+                case 1:
+                    admin.viewRoomBookings();
                     break;
-                case 2: admin.cancelRoomBooking();
+                case 2:
+                    admin.cancelRoomBooking();
                     break;
-                case 3: return;
-                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                case 3:
+                    return;
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 3.");
                     break;
             }
         }
@@ -131,11 +176,14 @@ public class HealthFitnessController {
 
         while (choice != 3) {
             switch (choice) {
-                case 1: success = login();
+                case 1:
+                    success = login();
                     break;
-                case 2: success = register();
+                case 2:
+                    success = register();
                     break;
-                default: System.out.println("Invalid choice. Please enter a number between 1 and 3.");
+                default:
+                    System.out.println("Invalid choice. Please enter a number between 1 and 3.");
                     break;
             }
             if (success) {
@@ -174,6 +222,7 @@ public class HealthFitnessController {
 
     /**
      * Handles the login process
+     *
      * @return true if login is successful, false otherwise
      */
     private boolean login() {
@@ -190,6 +239,7 @@ public class HealthFitnessController {
 
     /**
      * Handles the registration process
+     *
      * @return true if registration is successful, false otherwise
      */
     private boolean register() {

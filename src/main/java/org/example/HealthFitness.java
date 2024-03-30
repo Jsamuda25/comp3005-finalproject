@@ -1,20 +1,19 @@
 package org.example;
 
-import java.sql.*;
-import java.sql.Connection;
-import java.sql.Statement;
-import java.util.List;
-
 import org.example.model.User;
 import org.example.model.User.UserType;
 
+import java.sql.*;
+import java.util.List;
+
 
 public class HealthFitness {
-    private User currentUser;
     public static Connection connection = null;
+    private User currentUser;
 
     /**
      * Logs in the user
+     *
      * @param loginInfo the user's login information
      * @return true if the user is successfully logged in, false otherwise
      */
@@ -24,14 +23,14 @@ public class HealthFitness {
         String password = loginInfo.get(1);
         String query = "SELECT id, username, typeofuser FROM users WHERE username=? AND password=?";
 
-        try{
+        try {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             statement.setString(2, password);
 
             ResultSet res = statement.executeQuery();
 
-            if(res.next()){
+            if (res.next()) {
 
                 String user = res.getString("username");
                 int userId = res.getInt("id");
@@ -41,25 +40,21 @@ public class HealthFitness {
                 res = statement.executeQuery();
                 res.next();
 
-                if(res.getString("typeofuser") .equals("MEMBER")){
+                if (res.getString("typeofuser").equals("MEMBER")) {
                     System.out.println(res.getString("typeofuser"));
-                    currentUser = new User(username, UserType.MEMBER,userId);
-                }
-                else if(res.getString("typeofuser").equals("ADMIN")){
+                    currentUser = new User(username, UserType.MEMBER, userId);
+                } else if (res.getString("typeofuser").equals("ADMIN")) {
                     currentUser = new User(username, UserType.ADMIN, userId);
-                }
-                else{
+                } else {
                     System.out.println(res.getString("typeofuser"));
                     currentUser = new User(username, UserType.TRAINER, userId);
                 }
-            }
-            else{
+            } else {
                 System.out.println("Incorrect username or password!");
                 return false;
 
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             System.out.println("Error logging in");
             return false;
         }
@@ -68,6 +63,7 @@ public class HealthFitness {
 
     /**
      * Registers the user
+     *
      * @param registerInfo the user's registration information
      * @return true if the user is successfully registered, false otherwise
      */
@@ -81,17 +77,16 @@ public class HealthFitness {
         String name = first_name + " " + last_name;
 
 
-        try{
+        try {
             String query = "SELECT username FROM users WHERE username=?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             ResultSet res = statement.executeQuery();
 
-            if(res.next() && res.getString("username").equals(username)){
+            if (res.next() && res.getString("username").equals(username)) {
                 System.out.println("This username is taken, please choose a different one.");
                 return false;
-            }
-            else{
+            } else {
                 query = "INSERT INTO users(username, password, name, typeofuser) " +
                         "VALUES(?,?,?,?)";
                 statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -113,8 +108,7 @@ public class HealthFitness {
                     }
                 }
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.err.println("Error registering user");
             return false;
         }
@@ -127,9 +121,7 @@ public class HealthFitness {
     }
 
     public UserType getUserType() {
-          return currentUser.userType;
-
-
+        return currentUser.userType;
     }
 
     public User getCurrentUser() {

@@ -2,22 +2,25 @@ package org.example.model;
 
 import org.example.InputScanner;
 import org.example.PostgresConnection;
+import org.example.View;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.sql.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.Date;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.util.Optional;
 import java.util.Scanner;
-import java.util.concurrent.ExecutionException;
 
-public class Member extends User{
+public class Member extends User {
 
     public static Connection connection = null;
-    public Member(User user){super(user);}
 
-    public void profileManagement(){
+    public Member(User user) {
+        super(user);
+    }
+
+    public void profileManagement() {
         Scanner scanner = InputScanner.getInstance();
         System.out.println("Welcome to profile management, what information would you like to modify?");
         System.out.println("1. Profile information");
@@ -27,23 +30,19 @@ public class Member extends User{
         System.out.print("Enter your choice as a number: ");
         int response = scanner.nextInt();
 
-        if(response == 1){
+        if (response == 1) {
             updatePersonalInfo();
-        }
-        else if(response ==2){
+        } else if (response == 2) {
             selectHealthOption();
-        }
-        else if(response == 3){
-           selectFitnessFunction();
-        }
-        else{
+        } else if (response == 3) {
+            selectFitnessFunction();
+        } else {
             System.out.println("Invalid selection");
-            return;
         }
     }
 
     //helper function for profileManagement()
-    public void updatePersonalInfo(){
+    public void updatePersonalInfo() {
         Scanner scanner = InputScanner.getInstance();
         System.out.println("You can change the following details:");
         System.out.println("1. Username");
@@ -53,29 +52,20 @@ public class Member extends User{
         System.out.print("Enter your choice as a number: ");
         int response = scanner.nextInt();
 
-        if(response == 1){
+        if (response == 1) {
             modifyUsername();
-            return;
-        }
-        else if(response ==2){
+        } else if (response == 2) {
             modifyPassword();
-            return;
-        }
-        else if(response == 3){
+        } else if (response == 3) {
             modifyName();
-            return;
-        }
-        else if(response==4){
-            return;
-        }
-        else{
+        } else if (response == 4) {
+        } else {
             System.out.println("Invalid selection");
-            return;
         }
 
     }
 
-    public boolean modifyUsername(){
+    public boolean modifyUsername() {
 
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Input new username: ");
@@ -83,17 +73,16 @@ public class Member extends User{
         String newUser = scanner.nextLine();
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String existQuery = "SELECT username from users WHERE username = ?";
             PreparedStatement statement = connection.prepareStatement(existQuery);
             statement.setString(1, newUser);
             ResultSet res = statement.executeQuery();
 
-            if(res.next() && res.getString("username").equals(newUser)){
+            if (res.next() && res.getString("username").equals(newUser)) {
                 System.out.println("This username is taken, please choose a different one.");
                 return false;
-            }
-            else {
+            } else {
 
                 String query = "UPDATE users SET username = ? WHERE id = ?";
                 statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
@@ -115,8 +104,7 @@ public class Member extends User{
                     }
                 }
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
 
@@ -124,14 +112,14 @@ public class Member extends User{
 
     }
 
-    public boolean modifyPassword(){
+    public boolean modifyPassword() {
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Input new password: ");
         scanner.nextLine();
         String newPass = scanner.nextLine();
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE users SET password = ? WHERE id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, newPass);
@@ -149,15 +137,14 @@ public class Member extends User{
                 }
             }
 
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return  false;
+            return false;
         }
-        return  true;
+        return true;
     }
 
-    public boolean modifyName(){
+    public boolean modifyName() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
         System.out.print("Enter first name: ");
@@ -168,7 +155,7 @@ public class Member extends User{
         String new_name = first_name + " " + last_name;
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE users SET name = ? WHERE id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, new_name);
@@ -185,8 +172,7 @@ public class Member extends User{
                     return false;
                 }
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             return false;
         }
@@ -196,7 +182,7 @@ public class Member extends User{
     }
 
     //helper function for profileManagement()
-    public void selectHealthOption(){
+    public void selectHealthOption() {
         System.out.println("Health Metrics Menu");
         System.out.println("1. View Health Metrics");
         System.out.println("2. Edit Health Metrics");
@@ -205,58 +191,51 @@ public class Member extends User{
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
         int response = scanner.nextInt();
-        if(response == 1){
+        if (response == 1) {
             viewHealthMetrics();
-        }
-        else if(response == 2){
+        } else if (response == 2) {
             editHealthMetrics();
-        }
-        else if(response == 3){
+        } else if (response == 3) {
             addHealthMetrics();
-        }
-        else if(response == 4){
+        } else if (response == 4) {
             profileManagement();
-        }
-        else{
-            return;
+        } else {
         }
 
 
     }
 
-    public void viewHealthMetrics(){
+    public void viewHealthMetrics() {
         System.out.println("Your Health Metrics");
         connection = PostgresConnection.connect();
         String query = "SELECT metric_id, metric_type, value, unit, notes, date_recorded FROM healthmetrics WHERE member_id = ?";
-        try{
+        try {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
             ResultSet res = statement.executeQuery();
 
-            while(res.next()){
+            while (res.next()) {
                 System.out.println("---------");
                 System.out.println("ID: " + res.getInt("metric_id"));
                 System.out.println("Metric Type: " + res.getString("metric_type"));
-                System.out.println("Value: " + res.getDouble("value") + "" + res.getString("unit"));
+                System.out.println("Value: " + res.getDouble("value") + res.getString("unit"));
                 System.out.println("Note: " + res.getString("notes"));
                 System.out.println("Date recorded: " + res.getDate("date_recorded") + "\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
 
     }
 
-    public void editHealthMetrics(){
+    public void editHealthMetrics() {
         viewHealthMetrics();
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Provide the ID of the metric you would like to edit, otherwise input 0: ");
         int metric_id = scanner.nextInt();
         scanner.nextLine();
 
-        if(metric_id == 0){
+        if (metric_id == 0) {
             return;
         }
 
@@ -270,39 +249,32 @@ public class Member extends User{
 
         int response = scanner.nextInt();
         scanner.nextLine();
-        if(response == 1){
+        if (response == 1) {
             System.out.print("Enter new metric type: ");
             String metric = scanner.nextLine();
             updateMetricType(metric_id, metric);
-        }
-        else if(response == 2){
+        } else if (response == 2) {
             System.out.print("Enter new metric value: ");
             Double val = scanner.nextDouble();
             updateMetricValue(metric_id, val);
             scanner.nextLine();
 
-        }
-        else if(response == 3){
+        } else if (response == 3) {
             System.out.print("Enter new metric unit: ");
             String unit = scanner.nextLine();
             updateMetricUnit(metric_id, unit);
 
-        }
-        else if(response == 4){
+        } else if (response == 4) {
             System.out.print("Enter new metric note: ");
             String note = scanner.nextLine();
             updateMetricNote(metric_id, note);
-        }
-        else if(response == 5){
-            return;
-        }
-        else{
-            return;
+        } else if (response == 5) {
+        } else {
         }
 
     }
 
-    public void addHealthMetrics(){
+    public void addHealthMetrics() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
         System.out.print("Enter Metric Type: ");
@@ -319,7 +291,7 @@ public class Member extends User{
 
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "INSERT INTO HealthMetrics(member_id, metric_type, value, date_recorded, unit, notes) VALUES (?, ? , ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
@@ -330,17 +302,16 @@ public class Member extends User{
             statement.setString(6, note);
             statement.executeUpdate();
             System.out.println("New metric has been added!\n");
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
 
 
-    public void updateMetricType(int id, String metric_type){
+    public void updateMetricType(int id, String metric_type) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE healthmetrics SET metric_type = ? WHERE metric_id = ? AND member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, metric_type);
@@ -349,28 +320,25 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("This metric has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Metric was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
     }
 
-    public void updateMetricValue(int id, Double value){
+    public void updateMetricValue(int id, Double value) {
 
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE healthmetrics SET value = ? WHERE metric_id = ? AND member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setDouble(1, value);
@@ -379,28 +347,25 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("This metric has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Metric was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
 
     }
 
-    public  void updateMetricUnit(int id, String unit){
+    public void updateMetricUnit(int id, String unit) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE healthmetrics SET unit = ? WHERE metric_id = ? AND member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, unit);
@@ -409,28 +374,25 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("This metric has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Metric was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
 
     }
 
-    public void updateMetricNote(int id, String note){
+    public void updateMetricNote(int id, String note) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE healthmetrics SET notes = ? WHERE metric_id = ? AND member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, note);
@@ -439,24 +401,21 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("This metric has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Metric was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
     }
 
-    public void selectFitnessFunction(){
+    public void selectFitnessFunction() {
         System.out.println("Fitness Goals Menu");
         System.out.println("1. View Fitness Goals");
         System.out.println("2. Edit Fitness Goal");
@@ -466,26 +425,21 @@ public class Member extends User{
         Scanner scanner = InputScanner.getInstance();
         int response = scanner.nextInt();
 
-        if(response == 1){
+        if (response == 1) {
             viewFitnessGoals();
-        }
-        else if(response == 2){
+        } else if (response == 2) {
             updateFitnessGoals();
-        }
-        else if(response == 3){
+        } else if (response == 3) {
             addFitnessGoals();
-        }
-        else if(response == 4){
+        } else if (response == 4) {
             profileManagement();
-        }
-        else{
-            return;
+        } else {
         }
 
     }
 
 
-    public void addFitnessGoals(){
+    public void addFitnessGoals() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
         System.out.print("Enter title: ");
@@ -497,7 +451,7 @@ public class Member extends User{
 
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "INSERT INTO FitnessGoal(userId, title, value, enddate, completed) VALUES (?, ? , ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
@@ -507,21 +461,21 @@ public class Member extends User{
             statement.setBoolean(5, false);
             statement.executeUpdate();
             System.out.println("Your goal has been added!\n");
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
 
     }
+
     //helper function for profileManagement()
-    public void updateFitnessGoals(){
+    public void updateFitnessGoals() {
         viewFitnessGoals();
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Provide the ID of the goal you would like to edit, otherwise input 0: ");
         int goal_id = scanner.nextInt();
         scanner.nextLine();
 
-        if(goal_id == 0){
+        if (goal_id == 0) {
             return;
         }
 
@@ -535,53 +489,45 @@ public class Member extends User{
         int response = scanner.nextInt();
         scanner.nextLine();
 
-        if(response == 1){
+        if (response == 1) {
             System.out.print("Enter new title: ");
             String title = scanner.nextLine();
             updateTitle(goal_id, title);
             updateFitnessGoals();
-        }
-        else if(response == 2){
+        } else if (response == 2) {
             System.out.print("Enter new description: ");
             String des = scanner.nextLine();
             updateDescription(goal_id, des);
             updateFitnessGoals();
-        }
-        else if(response ==3){
+        } else if (response == 3) {
             System.out.print("Enter new end date (YYYY-MM-DD):  ");
-            String date =  scanner.nextLine();
+            String date = scanner.nextLine();
             modifyDate(goal_id, date);
             updateFitnessGoals();
-        }
-        else if(response == 4){
+        } else if (response == 4) {
             System.out.println("Enter new status (0 = Incomplete, 1 = Complete): ");
             int status = scanner.nextInt();
             boolean stat = false;
 
-            if(status==0){
+            if (status == 0) {
                 stat = false;
-            }
-            else if(status ==1){
+            } else if (status == 1) {
                 stat = true;
-            }
-            else{
+            } else {
                 System.out.println("Invalid value for status:");
             }
             updateStatus(goal_id, stat);
             updateFitnessGoals();
-        }
-        else if (response==5){
+        } else if (response == 5) {
             profileManagement();
-        }
-        else{
-            return;
+        } else {
         }
     }
 
-    public void updateTitle(int id, String title){
+    public void updateTitle(int id, String title) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE fitnessgoal SET title = ? WHERE goalid = ? AND userid = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, title);
@@ -590,27 +536,24 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("Your goal has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Goal was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
     }
 
-    public void updateDescription(int id, String description){
+    public void updateDescription(int id, String description) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE fitnessgoal SET value = ? WHERE goalid = ? AND userid = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setString(1, description);
@@ -619,28 +562,25 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("Your goal has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Goal was not updated.\n");
-                return;
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
 
     }
 
-    public void modifyDate(int id, String date){
+    public void modifyDate(int id, String date) {
         connection = PostgresConnection.connect();
 
-        try{
+        try {
             String query = "UPDATE fitnessgoal SET enddate = ? WHERE goalid = ? AND userid = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setDate(1, java.sql.Date.valueOf(date));
@@ -649,26 +589,23 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("Your goal has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Goal was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
     }
 
-    public void updateStatus(int id, boolean completed){
+    public void updateStatus(int id, boolean completed) {
 
-        try{
+        try {
             String query = "UPDATE fitnessgoal SET completed = ? WHERE goalid = ? AND userid = ?";
             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             statement.setBoolean(1, completed);
@@ -677,32 +614,30 @@ public class Member extends User{
 
             int result = statement.executeUpdate();
 
-            if(result > 0){
-                try(ResultSet gKeys = statement.getGeneratedKeys()){
-                    if(gKeys.next()){
+            if (result > 0) {
+                try (ResultSet gKeys = statement.getGeneratedKeys()) {
+                    if (gKeys.next()) {
                         System.out.println("Your goal has been updated.");
                     }
                 }
-            }
-            else{
+            } else {
                 System.out.println("Goal was not updated.\n");
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
 
 
-    public void viewFitnessGoals(){
+    public void viewFitnessGoals() {
         connection = PostgresConnection.connect();
         System.out.println("Your fitness goals: ");
-        try{
+        try {
             String query = "SELECT goalid, title, value, enddate, completed FROM fitnessgoal WHERE userid = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
             ResultSet res = statement.executeQuery();
-            while(res.next()){
+            while (res.next()) {
                 System.out.println("---------");
                 System.out.println("Goal id: " + res.getString("goalid"));
                 System.out.println("Title: " + res.getString("title"));
@@ -710,18 +645,102 @@ public class Member extends User{
                 System.out.println("End date: " + res.getDate("enddate"));
                 System.out.println("Completed (T/F): " + res.getBoolean("completed") + "\n");
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
-            return;
         }
 
     }
-    public void displayInfo(){
+
+    public void scheduleManagement() {
 
     }
 
-    public void scheduleManagement(){
+    public void viewExerciseRoutines() {
+        System.out.println("Exercise Routines: ");
 
+        try {
+            connection = PostgresConnection.connect();
+            String query = "SELECT id, name FROM exerciseroutines";
+            PreparedStatement statement = connection.prepareStatement(query);
+            ResultSet res = statement.executeQuery();
+
+            while (res.next()) {
+                System.out.println("Exercise " + res.getInt("id") + ": " + res.getString("name"));
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        System.out.print("Enter the ID of the exercise routine you would like to view or -1 to go back: ");
+        Optional<Integer> equipmentId = View.getIntegerInput();
+        while (equipmentId.isEmpty()) {
+            System.out.println("Invalid input. Please enter a number.");
+            equipmentId = View.getIntegerInput();
+        }
+        if (equipmentId.get() == -1) return;
+
+        try {
+            String query = "SELECT name, instruction FROM exerciseroutines WHERE id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, equipmentId.get());
+            ResultSet res = statement.executeQuery();
+
+            if (res.next()) {
+                System.out.println("Name: " + res.getString("name"));
+
+                // Parse the instructions into a list of strings
+                String[] instructions = res.getString("instruction").split(";");
+                for (String instruction : instructions) {
+                    System.out.print("    ");
+                    System.out.println(instruction);
+                }
+            } else {
+                System.out.println("No exercise routine found with that ID.");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void viewFitnessAchievements() {
+        // Show the fitness goals marked as completed
+        System.out.println("Fitness Achievements: ");
+        try {
+            connection = PostgresConnection.connect();
+            String query = "SELECT title, value, enddate FROM fitnessgoal WHERE userid = ? AND completed = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setBoolean(2, true);
+            ResultSet res = statement.executeQuery();
+
+            while (res.next()) {
+                System.out.println("Title: " + res.getString("title"));
+                System.out.println("Description: " + res.getString("value"));
+                System.out.println("End date: " + res.getDate("enddate") + "\n");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void viewHealthStatistics() {
+        // Get the most recent metric for each routine and display it
+        System.out.println("Health Statistics: ");
+        System.out.println("---Showing the most recent health metrics---");
+        try {
+            connection = PostgresConnection.connect();
+            String query = "SELECT h.metric_type, avg(h.value), h.unit, h.date_recorded FROM healthmetrics h " + "INNER JOIN " + "(SELECT metric_type, MAX(date_recorded) as date_recorded FROM healthmetrics " + "WHERE member_id = ? GROUP BY metric_type) m " + "ON h.metric_type = m.metric_type AND h.date_recorded = m.date_recorded " + "GROUP BY h.metric_type, h.unit, h.date_recorded";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet res = statement.executeQuery();
+
+            while (res.next()) {
+                System.out.println("Metric Type: " + res.getString("metric_type"));
+                System.out.println("Value: " + res.getDouble("avg") + " " + res.getString("unit"));
+                System.out.println("Last Date Recorded: " + res.getDate("date_recorded") + "\n");
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
 }

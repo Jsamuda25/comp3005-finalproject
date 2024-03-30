@@ -3,10 +3,10 @@ package org.example.model;
 import org.example.InputScanner;
 import org.example.Main;
 import org.example.View;
+
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.sql.Timestamp;
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Scanner;
@@ -19,6 +19,14 @@ public class Admin extends User {
         super(user);
     }
 
+    private static String getTypeOfFee(ResultSet resultSet) throws SQLException {
+        return switch (resultSet.getInt("type_of_fee")) {
+            case 0 -> "Membership";
+            case 1 -> "Class";
+            case 2 -> "Training Session";
+            default -> "Unknown";
+        };
+    }
 
     /**
      * Admin can view room bookings from the database
@@ -124,6 +132,49 @@ public class Admin extends User {
         }
         assert classSession != null;
 
+        // Get the class members
+        ArrayList<Integer> classMembers = new ArrayList<>();
+        try {
+            String query = "SELECT member_id FROM classmembers WHERE class_id = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, classId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                classMembers.add(resultSet.getInt("member_id"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving class members.");
+            return;
+        }
+
+        // Cancel the class members' billing if its unpaid
+        for (int memberId : classMembers) {
+            try {
+                String query = "SELECT billing_id FROM billing WHERE member_id = ? AND type_of_fee = 1 AND paid = false";
+                PreparedStatement preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, memberId);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()) {
+                    int billingId = resultSet.getInt("billing_id");
+                    query = "DELETE FROM billing WHERE billing_id = ?";
+                    preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setInt(1, billingId);
+                    preparedStatement.executeUpdate();
+                    System.out.println("Billing " + billingId + ": Member " + memberId + " bill for the Class Session is cancelled.");
+                } else {
+                    // remove bill from billing table and print "Refund Processed for member_id with billing_id"
+                    query = "DELETE FROM billing WHERE member_id = ? AND type_of_fee = 1 AND paid = true";
+                    preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setInt(1, memberId);
+                    preparedStatement.executeUpdate();
+                    System.out.println("Class Session Refund Processed for member_id " + memberId);
+                }
+            } catch (SQLException e) {
+                System.err.println("Error cancelling class members' billing.");
+                return;
+            }
+        }
+
         // Delete the class members
         try {
             String query = "DELETE FROM classmembers WHERE class_id = ?";
@@ -164,19 +215,47 @@ public class Admin extends User {
 
         // Get the trainer's ID
         Session trainingSession = null;
+        int member_id = 0;
         try {
-            String query = "SELECT trainer_id, start_date, end_date FROM trainingsessions WHERE session_id = ?";
+            String query = "SELECT trainer_id, member_id, start_date, end_date FROM trainingsessions WHERE session_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, session_id);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
                 trainingSession = new Session(resultSet.getInt("trainer_id"), resultSet.getTimestamp("start_date"), resultSet.getTimestamp("end_date"));
+                member_id = resultSet.getInt("member_id");
             }
         } catch (SQLException e) {
             System.out.println("Error getting training session details.");
             return;
         }
         assert trainingSession != null;
+
+        // Cancel the member's billing if its unpaid
+        try {
+            String query = "SELECT billing_id FROM billing WHERE member_id = ? AND type_of_fee = 2 AND paid = false";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, member_id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                int billingId = resultSet.getInt("billing_id");
+                query = "DELETE FROM billing WHERE billing_id = ?";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, billingId);
+                preparedStatement.executeUpdate();
+                System.out.println("Billing " + billingId + ": Member " + member_id + " bill for the Training Session is cancelled.");
+            } else {
+                // remove bill from billing table and print "Refund Processed for member_id with billing_id"
+                query = "DELETE FROM billing WHERE member_id = ? AND type_of_fee = 1 AND paid = true";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, member_id);
+                preparedStatement.executeUpdate();
+                System.out.println("Training Session Refund Processed for member_id " + member_id);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error cancelling member's billing.");
+            return;
+        }
 
         // Delete the training session
         try {
@@ -254,7 +333,7 @@ public class Admin extends User {
     }
 
     public void classScheduleUpdating() {
-        while (true){
+        while (true) {
             System.out.println("1. create new class");
             System.out.println("2. edit existing class room");
             System.out.println("3. edit existing class time/date");
@@ -267,7 +346,7 @@ public class Admin extends User {
                 System.out.println("Invalid choice. Please enter a number between 1 and 7.");
                 choice = View.getIntegerInput();
             }
-            switch (choice.get()){
+            switch (choice.get()) {
                 case 1:
                     createNewClass();
                     break;
@@ -327,7 +406,7 @@ public class Admin extends User {
 
             // Insert new class into the database
             String classInsertQuery = "INSERT INTO Class (trainer_id, class_name, start_date, end_date, room_id) " +
-                    "VALUES (?, ?, ?, ?, ?)";
+                                      "VALUES (?, ?, ?, ?, ?)";
             PreparedStatement classInsertStatement = connection.prepareStatement(classInsertQuery, Statement.RETURN_GENERATED_KEYS);
             classInsertStatement.setInt(1, trainerId);
             classInsertStatement.setString(2, className);
@@ -347,7 +426,7 @@ public class Admin extends User {
 
             // Insert entry into RoomBooking
             String roomBookingInsertQuery = "INSERT INTO RoomBooking (typeOfBooking, session_id, class_id, date, start_time, end_time) " +
-                    "VALUES (1, NULL, ?, ?, ?, ?)";
+                                            "VALUES (1, NULL, ?, ?, ?, ?)";
             PreparedStatement roomBookingInsertStatement = connection.prepareStatement(roomBookingInsertQuery);
             roomBookingInsertStatement.setInt(1, classId);
             roomBookingInsertStatement.setDate(2, new Date(startDate.getTime()));
@@ -472,7 +551,6 @@ public class Admin extends User {
         }
     }
 
-
     public void editClassRoom() {
         try {
             viewClasses();
@@ -572,12 +650,9 @@ public class Admin extends User {
         }
     }
 
-
-
-
     private boolean isTrainerAvailable(int trainerId, Timestamp startDate, Timestamp endDate) throws SQLException {
         String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " +
-                "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
+                       "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, trainerId);
         preparedStatement.setTimestamp(2, endDate);
@@ -588,11 +663,10 @@ public class Admin extends User {
         return count > 0;
     }
 
-
     private boolean isRoomAvailable(int roomId, Timestamp startDate, Timestamp endDate) throws SQLException {
         String query = "SELECT COUNT(*) AS count FROM RoomBooking " +
-                "WHERE room_id = ? AND date = ? " +
-                "AND ? < end_time AND start_time < ?";
+                       "WHERE room_id = ? AND date = ? " +
+                       "AND ? < end_time AND start_time < ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, roomId);
         preparedStatement.setDate(2, new Date(startDate.getTime()));
@@ -604,9 +678,7 @@ public class Admin extends User {
         return count == 0;
     }
 
-
-
-    private void viewClasses(){
+    private void viewClasses() {
         try {
             String query = "SELECT * FROM class ORDER BY start_date";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -652,15 +724,6 @@ public class Admin extends User {
             System.err.println("Error retrieving billing data.");
         }
 
-    }
-
-    private static String getTypeOfFee(ResultSet resultSet) throws SQLException {
-        return switch (resultSet.getInt("type_of_fee")) {
-            case 0 -> "Membership";
-            case 1 -> "Class";
-            case 2 -> "Training Session";
-            default -> "Unknown";
-        };
     }
 
     public void processPayment() {

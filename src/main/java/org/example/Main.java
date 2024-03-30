@@ -5,7 +5,8 @@ import java.sql.Connection;
 public class Main {
 
     public static Connection connection = null;
-    public static void main(String[] args)  {
+
+    public static void main(String[] args) {
         connection = PostgresConnection.connect();
         if (connection != null)
             System.out.println("Connected to the PostgreSQL server successfully.");

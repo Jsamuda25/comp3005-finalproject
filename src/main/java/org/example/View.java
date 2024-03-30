@@ -10,14 +10,31 @@ public class View {
     private static final List<String> TRAINER_MENU_OPTIONS = Arrays.asList("Schedule Management", "Member Profile Viewing", "Logout");
     private static final List<String> ADMIN_MENU_OPTIONS = Arrays.asList("Room Booking Management", "Equipment Maintenance Monitoring", "Class Schedule Updating", "Billing and Payment Processing", "Logout");
 
+    /**
+     * Helper method that gets an integer input from the user
+     *
+     * @return an optional containing the integer input if it is valid
+     */
+    public static Optional<Integer> getIntegerInput() {
+        try {
+            return Optional.of(scanner.nextInt());
+        } catch (InputMismatchException e) {
+            scanner.nextLine();
+            return Optional.empty();
+        }
+    }
+
     public void welcome() {
         System.out.println("Welcome to the Health and Fitness System!");
     }
 
-    public void logoutMessage() { System.out.println("You have been logged out."); }
+    public void logoutMessage() {
+        System.out.println("You have been logged out.");
+    }
 
     /**
      * Displays the login menu and returns the user's choice
+     *
      * @return the user's choice
      */
     public int welcomeMenu() {
@@ -36,6 +53,7 @@ public class View {
 
     /**
      * Prompts the user to enter their login information
+     *
      * @return a list containing the user's login information
      */
     public List<String> loginInput() {
@@ -52,6 +70,7 @@ public class View {
 
     /**
      * Prompts the user to enter their registration information
+     *
      * @return a list containing the user's registration information
      */
     public List<String> registerInput() {
@@ -74,6 +93,7 @@ public class View {
 
     /**
      * Diplays the member menu and returns the user's choice
+     *
      * @return the user's choice
      */
     public int memberMenu() {
@@ -83,6 +103,7 @@ public class View {
 
     /**
      * Displays the trainer menu and returns the user's choice
+     *
      * @return the user's choice
      */
     public int trainerMenu() {
@@ -92,6 +113,7 @@ public class View {
 
     /**
      * Displays the admin menu and returns the user's choice
+     *
      * @return the user's choice
      */
     public int adminMenu() {
@@ -101,6 +123,7 @@ public class View {
 
     /**
      * Displays the room booking menu and returns the user's choice
+     *
      * @return the user's choice
      */
     public int roomBookingMenu() {
@@ -111,6 +134,7 @@ public class View {
 
     /**
      * Helper method that prompts the user to enter a choice
+     *
      * @param options the list of options to choose from
      * @return the user's choice
      */
@@ -129,6 +153,7 @@ public class View {
 
     /**
      * Displays a menu with the given options
+     *
      * @param options the list of options to display
      */
     private void menu(List<String> options) {
@@ -138,25 +163,18 @@ public class View {
         }
     }
 
-    /**
-     * Helper method that gets an integer input from the user
-     * @return an optional containing the integer input if it is valid
-     */
-    public static Optional<Integer> getIntegerInput() {
-        try {
-            return Optional.of(scanner.nextInt());
-        } catch (InputMismatchException e) {
-            scanner.nextLine();
-            return Optional.empty();
-        }
-    }
-
     public void close() {
         scanner.close();
     }
 
     public int billingAndPaymentMenu() {
         ArrayList<String> options = new ArrayList<>(Arrays.asList("View Billing and Payment", "Process Payment", "Back"));
+        menu(options);
+        return getChoice(options);
+    }
+
+    public int memberDashboardMenu() {
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("Display Exercise Routines", "Fitness Achievements", "Health Statistics", "Back"));
         menu(options);
         return getChoice(options);
     }

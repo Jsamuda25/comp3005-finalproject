@@ -1,9 +1,12 @@
-package org.example;
+package org.example.model;
+
+import org.example.InputScanner;
+import org.example.PostgresConnection;
+
 import java.sql.*;
-import java.util.Scanner;
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
-import org.example.model.User;
+import java.text.SimpleDateFormat;
+import java.util.Scanner;
 
 public class Trainer {
     private static final Connection connection = PostgresConnection.connect();
@@ -174,9 +177,7 @@ public class Trainer {
 
     private static void fetchAndDisplayClasses(int memberId) {
         try {
-            String query = "SELECT C.class_name FROM ClassMembers CM " +
-                    "JOIN Class C ON CM.class_id = C.class_id " +
-                    "WHERE CM.member_id = ?";
+            String query = "SELECT C.class_name FROM ClassMembers CM " + "JOIN Class C ON CM.class_id = C.class_id " + "WHERE CM.member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, memberId);
             ResultSet resultSet = statement.executeQuery();
