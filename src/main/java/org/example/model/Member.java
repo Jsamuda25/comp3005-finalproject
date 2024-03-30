@@ -33,7 +33,7 @@ public class Member extends User{
             updateHealthMetrics();
         }
         else if(response == 3){
-            updateFitnessGoals();
+           selectFitnessFunction();
         }
         else{
             System.out.println("Invalid selection");
@@ -200,18 +200,72 @@ public class Member extends User{
     }
 
 
+    public void selectFitnessFunction(){
+        System.out.println("Fitness Goals Menu");
+        System.out.println("1. View Fitness Goals");
+        System.out.println("2. Edit Fitness Goal");
+        System.out.println("3. Add Fitness Goal");
+        System.out.println("4. Exit");
+        System.out.print("Enter choice as integer: ");
+        Scanner scanner = InputScanner.getInstance();
+        int response = scanner.nextInt();
+
+        if(response == 1){
+            viewFitnessGoals();
+        }
+        else if(response == 2){
+            updateFitnessGoals();
+        }
+        else if(response == 3){
+            addFitnessGoals();
+        }
+        else if(response == 4){
+            profileManagement();
+        }
+        else{
+            return;
+        }
+
+    }
+
+
+
     public void addFitnessGoals(){
+        Scanner scanner = InputScanner.getInstance();
+        scanner.nextLine();
+        System.out.print("Enter title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter description: ");
+        String description = scanner.nextLine();
+        System.out.print("Enter end date (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "INSERT INTO FitnessGoal(userId, title, value, enddate, completed) VALUES (?, ? , ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setString(2, title);
+            statement.setString(3, description);
+            statement.setDate(4, java.sql.Date.valueOf(date));
+            statement.setBoolean(5, false);
+            statement.executeUpdate();
+        }
+        catch (Exception e){
+
+        }
 
     }
     //helper function for profileManagement()
     public void updateFitnessGoals(){
         viewFitnessGoals();
         Scanner scanner = InputScanner.getInstance();
-        System.out.print("Provide the ID of the goal you would like to edit, otherwise input 999: ");
+        System.out.print("Provide the ID of the goal you would like to edit, otherwise input 0: ");
         int goal_id = scanner.nextInt();
         scanner.nextLine();
 
-        if(goal_id == 999){
+        if(goal_id == 0){
             return;
         }
 
