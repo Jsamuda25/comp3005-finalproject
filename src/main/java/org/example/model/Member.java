@@ -3,6 +3,7 @@ package org.example.model;
 import org.example.InputScanner;
 import org.example.PostgresConnection;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.sql.*;
 import java.sql.Connection;
@@ -30,7 +31,7 @@ public class Member extends User{
             updatePersonalInfo();
         }
         else if(response ==2){
-            updateHealthMetrics();
+            selectHealthOption();
         }
         else if(response == 3){
            selectFitnessFunction();
@@ -195,8 +196,94 @@ public class Member extends User{
     }
 
     //helper function for profileManagement()
-    public void updateHealthMetrics(){
-        System.out.println("Update Health Metrics");
+    public void selectHealthOption(){
+        System.out.println("Health Metrics Menu");
+        System.out.println("1. View Health Metrics");
+        System.out.println("2. Edit Health Metrics");
+        System.out.println("3. Add Health Metrics");
+        System.out.println("4. Exit");
+        System.out.print("Enter choice as integer: ");
+        Scanner scanner = InputScanner.getInstance();
+        int response = scanner.nextInt();
+        if(response == 1){
+            viewHealthMetrics();
+        }
+        else if(response == 2){
+            editHealthMetrics();
+        }
+        else if(response == 3){
+            addHealthMetrics();
+        }
+        else if(response == 4){
+            profileManagement();
+        }
+        else{
+            return;
+        }
+
+
+    }
+
+    public void viewHealthMetrics(){
+        System.out.println("Your Health Metrics");
+        connection = PostgresConnection.connect();
+        String query = "SELECT metric_type, value, unit, notes, date_recorded FROM healthmetrics WHERE member_id = ?";
+        try{
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet res = statement.executeQuery();
+
+            while(res.next()){
+                System.out.println("---------");
+                System.out.println("Metric: " + res.getString("metric_type"));
+                System.out.println("Value: " + res.getDouble("value") + "" + res.getString("unit"));
+                System.out.println("Note: " + res.getString("notes"));
+                System.out.println("Date recorded: " + res.getDate("date_recorded") + "\n");
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+    }
+
+    public void editHealthMetrics(){
+
+    }
+
+    public void addHealthMetrics(){
+        Scanner scanner = InputScanner.getInstance();
+        scanner.nextLine();
+        System.out.print("Enter Metric Type: ");
+        String metric = scanner.nextLine();
+        System.out.print("Enter value: ");
+        Double value = scanner.nextDouble();
+        scanner.nextLine();
+        System.out.print("Enter unit of measurement: ");
+        String unit = scanner.nextLine();
+        System.out.print("Enter note: ");
+        String note = scanner.nextLine();
+
+        LocalDate date = java.time.LocalDate.now();
+
+        connection = PostgresConnection.connect();
+
+        try{
+            String query = "INSERT INTO HealthMetrics(member_id, metric_type, value, date_recorded, unit, notes) VALUES (?, ? , ?, ?, ?, ?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setString(2, metric);
+            statement.setDouble(3, value);
+            statement.setDate(4, java.sql.Date.valueOf(date));
+            statement.setString(5, unit);
+            statement.setString(6, note);
+            statement.executeUpdate();
+            System.out.println("New metric has been added!\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+        }
     }
 
 
@@ -251,9 +338,10 @@ public class Member extends User{
             statement.setDate(4, java.sql.Date.valueOf(date));
             statement.setBoolean(5, false);
             statement.executeUpdate();
+            System.out.println("Your goal has been added!\n");
         }
         catch (Exception e){
-
+            System.out.println(e);
         }
 
     }
