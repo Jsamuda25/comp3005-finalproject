@@ -4,13 +4,12 @@ import org.example.InputScanner;
 import org.example.PostgresConnection;
 import org.example.View;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.SimpleTimeZone;
 
 public class Member extends User {
 
@@ -651,7 +650,138 @@ public class Member extends User {
 
     }
 
-    public void scheduleManagement() {
+    public void scheduleManagement(){
+
+        System.out.println("--- Schedule Management Menu ---");
+        System.out.println("What would you like to do?");
+        System.out.println("1. Join a class");
+        System.out.println("2. Schedule session with trainer");
+        System.out.println("3. Exit");
+        System.out.print("Enter choice as integer: ");
+        Scanner scanner = InputScanner.getInstance();
+        int response = scanner.nextInt();
+        scanner.nextLine();
+
+        if(response==1){
+            joinClass();
+        }
+        else if(response==2){
+            scheduleSession();
+        }
+        else if(response == 3){
+            return;
+        }
+        else{
+            System.out.println("Invalid selection");
+            scheduleManagement();
+        }
+    }
+
+    private void viewAvailableClasses() {
+        connection = PostgresConnection.connect();
+        try {
+            String query = "SELECT * FROM class ORDER BY start_date";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+//                System.out.println("Scheduled classes:");
+                System.out.println("Class ID: " + resultSet.getInt("class_id"));
+                System.out.println("Class Name: " + resultSet.getString("class_name"));
+                System.out.println("Trainer ID: " + resultSet.getInt("trainer_id"));
+                System.out.println("Start Date: " + resultSet.getDate("start_date"));
+                System.out.println("End Date: " + resultSet.getDate("end_date"));
+                System.out.println("room ID: " + resultSet.getInt("room_id"));
+                System.out.println();
+            }
+        } catch (SQLException e) {
+            System.err.println("Error retrieving class data.");
+            return;
+        }
+    }
+
+    public void joinClass(){
+        connection = PostgresConnection.connect();
+        System.out.println("--- Available Classes ---");
+        viewAvailableClasses();
+        Scanner scanner = InputScanner.getInstance();
+        System.out.print("Enter the ID of the class you would like to join, otherwise input 0: ");
+        int class_id = scanner.nextInt();
+        scanner.nextLine();
+
+        if(class_id == 0){
+            scheduleManagement();
+            return;
+        }
+
+        try{
+            String query = "SELECT * FROM classmembers WHERE class_id = ? AND member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, class_id);
+            statement.setInt(2, getUserID());
+            ResultSet res = statement.executeQuery();
+            if(res.next()){
+                System.out.println("You are already registered for this class. \n");
+                return;
+            }
+        }
+        catch(Exception e){
+            System.out.println(e);
+        }
+
+        try{
+            String query = "INSERT INTO classmembers(class_id, member_id) VALUES(?,?)";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, class_id);
+            statement.setInt(2, getUserID());
+            statement.executeUpdate();
+            System.out.println("You have been added to this class\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+        }
+
+        System.out.println("Pay the fee to confirm enrollment");
+        System.out.print("Input 1 to confirm payment, otherwise you will be removed from the class: ");
+        int resPay = scanner.nextInt();
+        scanner.nextLine();
+
+        Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+
+        if(resPay == 1){
+            String query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
+            try {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, getUserID());
+                statement.setDouble(2, 50);
+                statement.setInt(3, 1);
+                statement.setBoolean(4, true);
+                statement.setTimestamp(5, currentTimestamp);
+                statement.executeUpdate();
+                System.out.println("Great, we look forward to seeing you! \n");
+            }
+            catch (Exception e){
+                System.out.println(e);
+            }
+        }
+        else{
+            String query = "DELETE FROM classmembers WHERE class_id = ? AND member_id = ?";
+            try {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, class_id);
+                statement.setInt(2, getUserID());
+                statement.executeUpdate();
+                System.out.println("You have been removed from this class.\n");
+            }
+            catch (Exception e){
+                System.out.println(e);
+            }
+
+        }
+
+    }
+
+    public void scheduleSession(){
+
 
     }
 
