@@ -191,4 +191,23 @@ public class Trainer {
             e.printStackTrace();
         }
     }
+
+    public void deleteAvailabilitySlot(int trainer_id, Timestamp start_date, Timestamp end_date){
+        try{
+            String delQuery = "DELETE FROM TrainerAvailability WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
+            PreparedStatement statement = connection.prepareStatement(delQuery);
+            statement.setInt(1, trainer_id);
+            statement.setTimestamp(2, start_date);
+            statement.setTimestamp(3, end_date);
+            statement.executeUpdate();
+            System.out.println("Trainer's schedule has been updated accordingly.\n");
+        }
+        catch(Exception e){
+
+        }
+    }
+
+
+
 }
+

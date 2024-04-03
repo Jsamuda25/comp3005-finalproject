@@ -728,18 +728,6 @@ public class Member extends User {
             System.out.println(e);
         }
 
-        try{
-            String query = "INSERT INTO classmembers(class_id, member_id) VALUES(?,?)";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, class_id);
-            statement.setInt(2, getUserID());
-            statement.executeUpdate();
-            System.out.println("You have been added to this class\n");
-        }
-        catch (Exception e){
-            System.out.println(e);
-        }
-
         System.out.println("Pay the fee to confirm enrollment");
         System.out.print("Input 1 to confirm payment, otherwise you will be removed from the class: ");
         int resPay = scanner.nextInt();
@@ -757,32 +745,161 @@ public class Member extends User {
                 statement.setBoolean(4, true);
                 statement.setTimestamp(5, currentTimestamp);
                 statement.executeUpdate();
-                System.out.println("Great, we look forward to seeing you! \n");
+                System.out.println("Your payment has been processed. \n");
+            }
+            catch (Exception e){
+                System.out.println(e);
+                return;
+            }
+
+            try{
+                query = "INSERT INTO classmembers(class_id, member_id) VALUES(?,?)";
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, class_id);
+                statement.setInt(2, getUserID());
+                statement.executeUpdate();
+                System.out.println("You have been added to this class, we look forward to seeing you!\n");
+            }
+            catch (Exception e){
+                System.out.println(e);
+                return;
+            }
+        }
+        else{
+            System.out.println("Your registration has been canceled.");
+            return;
+        }
+
+    }
+
+    public void scheduleSession(){
+        boolean avail = viewTrainerAvailability();
+
+        if(!avail){
+            return;
+        }
+        System.out.println("--- Book session --- ");
+        System.out.print("Enter Trainer ID: ");
+        Scanner scanner = InputScanner.getInstance();
+        int trainer_id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter Date (YYYY-MMM-DD): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter start time (HH:MM:SS): ");
+        String start_time = scanner.nextLine();
+        System.out.print("Enter end time (HH:MM:SS): ");
+        String end_time = scanner.nextLine();
+
+        Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
+        Timestamp end_timestamp = Timestamp.valueOf(date +  " " + end_time);
+
+        int span = start_timestamp.compareTo(end_timestamp);
+
+        if(span >= 0){
+            System.out.println("ERROR: End timestamp must be greater than start timestamp.");
+            return;
+        }
+
+        System.out.println("");
+        try {
+            if (!isTrainerAvailable(trainer_id, start_timestamp, end_timestamp)) {
+                System.out.println("This trainer is not available during this date and time.");
+                return;
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+
+
+        System.out.println("Please pay the fee to confirm session booking.");
+        System.out.print("Input 1 to confirm payment, otherwise this session will be cancelled: ");
+        int resPay = scanner.nextInt();
+        scanner.nextLine();
+
+        Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+
+        if(resPay == 1){
+           String query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
+            try {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, getUserID());
+                statement.setDouble(2, 60);
+                statement.setInt(3, 2);
+                statement.setBoolean(4, true);
+                statement.setTimestamp(5, currentTimestamp);
+                statement.executeUpdate();
+                System.out.println("Your payment has been processed! \n");
+                Trainer trainer = new Trainer();
+                trainer.deleteAvailabilitySlot(trainer_id, start_timestamp, end_timestamp);
+            }
+            catch (Exception e){
+                System.out.println(e);
+                return;
+            }
+
+            query = "INSERT INTO trainingsessions (member_id, trainer_id, start_date, end_date) VALUES (?,?,?,?)";
+            try {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, getUserID());
+                statement.setInt(2, trainer_id);
+                statement.setTimestamp(3, start_timestamp);
+                statement.setTimestamp(4, end_timestamp);
+                statement.executeUpdate();
+                System.out.println("We have scheduled your training session.\n");
             }
             catch (Exception e){
                 System.out.println(e);
             }
         }
         else{
-            String query = "DELETE FROM classmembers WHERE class_id = ? AND member_id = ?";
-            try {
-                PreparedStatement statement = connection.prepareStatement(query);
-                statement.setInt(1, class_id);
-                statement.setInt(2, getUserID());
-                statement.executeUpdate();
-                System.out.println("You have been removed from this class.\n");
-            }
-            catch (Exception e){
-                System.out.println(e);
-            }
-
+            System.out.println("Your registration has been canceled.");
+            return;
         }
 
     }
 
-    public void scheduleSession(){
+
+    private boolean isTrainerAvailable(int trainerId, Timestamp startDate, Timestamp endDate) throws SQLException {
+        connection = PostgresConnection.connect();
+        String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " +
+                "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, trainerId);
+        preparedStatement.setTimestamp(2, endDate);
+        preparedStatement.setTimestamp(3, startDate);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        int count = resultSet.getInt("count");
+        return count > 0;
+    }
 
 
+    private boolean viewTrainerAvailability(){
+        connection = PostgresConnection.connect();
+        System.out.println("See trainer availability below: ");
+        try{
+            String query = "SELECT * FROM TrainerAvailability";
+            Statement stmt = connection.createStatement();
+            stmt.executeQuery(query);
+            ResultSet resultSet = stmt.getResultSet();
+
+            if(resultSet.getFetchSize() <=0){
+                System.out.println("Sorry, there are currently no available time slots.\n");
+                return false;
+            }
+            while (resultSet.next()){
+                System.out.println("Trainer ID: "+  resultSet.getInt("trainer_id") + ", available "  + resultSet.getTimestamp("start_time") + " to " + resultSet.getTimestamp("end_time"));
+            }
+            System.out.println("\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+        }
+        return true;
     }
 
     public void viewExerciseRoutines() {
