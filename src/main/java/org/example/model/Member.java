@@ -857,6 +857,7 @@ public class Member extends User {
             statement.executeUpdate();
             Trainer trainer = new Trainer();
             trainer.deleteAvailabilitySlot(trainer_id, start_timestamp, end_timestamp);
+            updateRoomBooking(session_id, start_timestamp, end_timestamp);
         }
         catch (Exception e){
             System.out.println("Sorry, could not reschedule");
@@ -886,6 +887,30 @@ public class Member extends User {
         }
     }
 
+    public void updateRoomBooking(int session_id, Timestamp start_time, Timestamp end_time){
+        connection = PostgresConnection.connect();
+
+        Date date = new Date(start_time.getTime());
+        Time begin = new Time(start_time.getTime());
+        Time end = new Time(end_time.getTime());
+
+
+        try{
+            String query = "UPDATE roombooking SET start_time = ?, end_time = ?, date = ? WHERE session_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setTime(1, begin);
+            statement.setTime(2, end);
+            statement.setDate(3, date);
+            statement.setInt(4, session_id);
+            statement.executeUpdate();
+        }
+        catch (Exception e){
+            System.out.println(e);
+            System.out.println("Sorry, could not update room booking.");
+            return;
+        }
+    }
+
     public void deleteRoomBooking(int session_id){
         connection = PostgresConnection.connect();
         try{
@@ -895,7 +920,8 @@ public class Member extends User {
             statement.executeUpdate();
         }
         catch (Exception e){
-            System.out.println("Sorry, could not reschedule");
+            System.out.println(e);
+            System.out.println("Sorry, could not delete room booking.");
             return;
         }
     }
