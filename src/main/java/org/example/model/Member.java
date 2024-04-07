@@ -1,5 +1,6 @@
 package org.example.model;
 
+import jdk.jshell.spi.ExecutionControlProvider;
 import org.example.InputScanner;
 import org.example.PostgresConnection;
 import org.example.View;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.SimpleTimeZone;
+import java.util.concurrent.ExecutionException;
 
 public class Member extends User {
 
@@ -656,7 +658,10 @@ public class Member extends User {
         System.out.println("What would you like to do?");
         System.out.println("1. Join a class");
         System.out.println("2. Schedule session with trainer");
-        System.out.println("3. Exit");
+        System.out.println("3. Reschedule session with trainer");
+        System.out.println("4. Cancel session with trainer");
+        System.out.println("5. View scheduled sessions");
+        System.out.println("6. Exit");
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
         int response = scanner.nextInt();
@@ -669,6 +674,16 @@ public class Member extends User {
             scheduleSession();
         }
         else if(response == 3){
+            rescheduleSession();
+
+        }
+        else if(response == 4){
+            cancelSession();
+        }
+        else if(response == 5){
+            viewPersonalSessions();
+        }
+        else if(response==6){
             return;
         }
         else{
@@ -772,6 +787,120 @@ public class Member extends User {
 
     }
 
+    public void viewPersonalSessions(){
+        System.out.println("--- View Your Scheduled Personal Training Sessions ---");
+
+        try {
+            connection = PostgresConnection.connect();
+            String query = "SELECT session_id, trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND cancelled = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setBoolean(2, false);
+            ResultSet res = statement.executeQuery();
+            while (res.next()) {
+                System.out.println("Training session (ID#" + res.getInt("session_id") + ") with trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
+            }
+            System.out.println("\n");
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+
+    }
+
+    public void rescheduleSession(){
+        viewPersonalSessions();
+        viewTrainerAvailability();
+        Scanner scanner = InputScanner.getInstance();
+        connection = PostgresConnection.connect();
+        System.out.print("Enter the ID of session you would like to reschedule: ");
+        int session_id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter trainer ID: ");
+        int trainer_id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter Date (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter start time (HH:MM:SS): ");
+        String start_time = scanner.nextLine();
+        System.out.print("Enter end time (HH:MM:SS): ");
+        String end_time = scanner.nextLine();
+
+        Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
+        Timestamp end_timestamp = Timestamp.valueOf(date +  " " + end_time);
+
+        int span = start_timestamp.compareTo(end_timestamp);
+
+        if(span >= 0){
+            System.out.println("ERROR: End timestamp must be greater than start timestamp.");
+            return;
+        }
+
+        System.out.println("");
+        try {
+            if (!isTrainerAvailable(trainer_id, start_timestamp, end_timestamp)) {
+                System.out.println("This trainer is not available during this date and time.");
+                return;
+            }
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+        try{
+            String query = "UPDATE trainingsessions SET start_date = ?, end_date = ? WHERE session_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setTimestamp(1, start_timestamp);
+            statement.setTimestamp(2, end_timestamp);
+            statement.setInt(3, session_id);
+            statement.executeUpdate();
+            Trainer trainer = new Trainer();
+            trainer.deleteAvailabilitySlot(trainer_id, start_timestamp, end_timestamp);
+        }
+        catch (Exception e){
+            System.out.println("Sorry, could not reschedule");
+            return;
+        }
+    }
+
+    public void cancelSession(){
+        viewPersonalSessions();
+        Scanner scanner = InputScanner.getInstance();
+        connection = PostgresConnection.connect();
+        System.out.print("Enter the ID of session you would like to cancel: ");
+        int session_id = scanner.nextInt();
+        scanner.nextLine();
+
+        try{
+            String query = "UPDATE trainingsessions SET cancelled = ? WHERE session_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setBoolean(1, true);
+            statement.setInt(2, session_id);
+            statement.executeUpdate();
+            deleteRoomBooking(session_id);
+        }
+        catch (Exception e){
+            System.out.println("Sorry, could not reschedule");
+            return;
+        }
+    }
+
+    public void deleteRoomBooking(int session_id){
+        connection = PostgresConnection.connect();
+        try{
+            String query = "DELETE FROM roombooking where session_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, session_id);
+            statement.executeUpdate();
+        }
+        catch (Exception e){
+            System.out.println("Sorry, could not reschedule");
+            return;
+        }
+    }
+
+
     public void scheduleSession(){
         boolean avail = viewTrainerAvailability();
 
@@ -841,13 +970,14 @@ public class Member extends User {
                 return;
             }
 
-            query = "INSERT INTO trainingsessions (member_id, trainer_id, start_date, end_date) VALUES (?,?,?,?)";
+            query = "INSERT INTO trainingsessions (member_id, trainer_id, start_date, end_date, cancelled) VALUES (?,?,?,?)";
             try {
                 PreparedStatement statement = connection.prepareStatement(query);
                 statement.setInt(1, getUserID());
                 statement.setInt(2, trainer_id);
                 statement.setTimestamp(3, start_timestamp);
                 statement.setTimestamp(4, end_timestamp);
+                statement.setBoolean(5, false);
                 statement.executeUpdate();
                 System.out.println("We have scheduled your training session.\n");
             }
@@ -888,7 +1018,7 @@ public class Member extends User {
             stmt.executeQuery(query);
             ResultSet resultSet = stmt.getResultSet();
 
-            if(resultSet.getFetchSize() <=0){
+            if(resultSet==null){
                 System.out.println("Sorry, there are currently no available time slots.\n");
                 return false;
             }

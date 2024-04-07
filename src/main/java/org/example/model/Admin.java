@@ -2,6 +2,7 @@ package org.example.model;
 
 import org.example.InputScanner;
 import org.example.Main;
+import org.example.PostgresConnection;
 import org.example.View;
 
 import java.sql.*;
@@ -439,6 +440,8 @@ public class Admin extends User {
             System.err.println("Error creating new class: " + e.getMessage());
         }
     }
+
+
 
     public void editClassTimeDate() {
         try {
