@@ -5,6 +5,7 @@ import org.example.model.User.UserType;
 
 import java.sql.*;
 import java.util.List;
+import java.util.Scanner;
 
 
 public class HealthFitness {
@@ -69,6 +70,9 @@ public class HealthFitness {
      */
     @SuppressWarnings("JpaQueryApiInspection")
     public boolean register(List<String> registerInfo) {
+        Scanner scanner = InputScanner.getInstance();
+        UserType userType;
+        int userId;
         connection = PostgresConnection.connect();
         String first_name = registerInfo.get(0);
         String last_name = registerInfo.get(1);
@@ -76,6 +80,23 @@ public class HealthFitness {
         String password = registerInfo.get(3);
         String name = first_name + " " + last_name;
 
+        System.out.print("Enter user type (MEMBER=0, TRAINER=1, ADMIN=2): ");
+        int type=scanner.nextInt();
+        scanner.nextLine();
+
+        if(type==0){
+            userType= UserType.MEMBER;
+        }
+        else if(type==1){
+            userType = UserType.TRAINER;
+        }
+        else if(type==2){
+            userType = UserType.ADMIN;
+        }
+        else{
+            System.out.println("Invalid type selected.");
+            return false;
+        }
 
         try {
             String query = "SELECT username FROM users WHERE username=?";
@@ -86,25 +107,84 @@ public class HealthFitness {
             if (res.next() && res.getString("username").equals(username)) {
                 System.out.println("This username is taken, please choose a different one.");
                 return false;
-            } else {
-                query = "INSERT INTO users(username, password, name, typeofuser) " +
-                        "VALUES(?,?,?,?)";
-                statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-                statement.setString(1, username);
-                statement.setString(2, password);
-                statement.setString(3, name);
-                statement.setObject(4, UserType.ADMIN, Types.OTHER);
-                int affectedRows = statement.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Creating user failed, no rows affected.");
-                }
+            }
+            else {
+                if(type>0){
+                    System.out.println("Welcome new staff member!");
+                    query = "INSERT INTO users(username, password, name, typeofuser) " +
+                            "VALUES(?,?,?,?)";
+                    statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                    statement.setString(1, username);
+                    statement.setString(2, password);
+                    statement.setString(3, name);
+                    statement.setObject(4, userType, Types.OTHER);
+                    int affectedRows = statement.executeUpdate();
+                    if (affectedRows == 0) {
+                        throw new SQLException("Creating user failed, no rows affected.");
+                    }
 
-                try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
-                        int userId = generatedKeys.getInt(1);
-                        currentUser = new User(username, UserType.ADMIN, userId);
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            userId = generatedKeys.getInt(1);
+                            currentUser = new User(username, userType, userId);
+
+                        } else {
+                            throw new SQLException("Creating user failed, no ID obtained.");
+                        }
+                    }
+                }
+                else {
+                    System.out.println("Pay the membership fee to confirm your registration: ");
+                    System.out.print("Input 1 to confirm payment, otherwise your registration will be cancelled: ");
+                    scanner = InputScanner.getInstance();
+                    int resPay = scanner.nextInt();
+                    scanner.nextLine();
+
+                    Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+
+                    if (resPay == 1) {
+
+                        query = "INSERT INTO users(username, password, name, typeofuser) " +
+                                "VALUES(?,?,?,?)";
+                        statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+                        statement.setString(1, username);
+                        statement.setString(2, password);
+                        statement.setString(3, name);
+                        statement.setObject(4, userType, Types.OTHER);
+                        int affectedRows = statement.executeUpdate();
+                        if (affectedRows == 0) {
+                            throw new SQLException("Creating user failed, no rows affected.");
+                        }
+
+                        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                            if (generatedKeys.next()) {
+                                userId = generatedKeys.getInt(1);
+                                currentUser = new User(username, userType, userId);
+
+                            } else {
+                                throw new SQLException("Creating user failed, no ID obtained.");
+                            }
+                        }
+
+
+                        query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
+                        try {
+                            statement = connection.prepareStatement(query);
+                            statement.setInt(1, userId);
+                            statement.setDouble(2, 150);
+                            statement.setInt(3, 0);
+                            statement.setBoolean(4, true);
+                            statement.setTimestamp(5, currentTimestamp);
+                            statement.executeUpdate();
+                            System.out.println("Your payment has been processed. \n");
+                        } catch (Exception e) {
+                            System.out.println(e);
+                            return false;
+                        }
+
                     } else {
-                        throw new SQLException("Creating user failed, no ID obtained.");
+                        System.out.println("Your registration has been canceled.");
+                        return false;
                     }
                 }
             }

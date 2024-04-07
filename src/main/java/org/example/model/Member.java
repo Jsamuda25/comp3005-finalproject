@@ -783,13 +783,14 @@ public class Member extends User {
         Scanner scanner = InputScanner.getInstance();
         int trainer_id = scanner.nextInt();
         scanner.nextLine();
-        System.out.print("Enter Date (YYYY-MMM-DD): ");
+        System.out.print("Enter Date (YYYY-MM-DD): ");
         String date = scanner.nextLine();
         System.out.print("Enter start time (HH:MM:SS): ");
         String start_time = scanner.nextLine();
         System.out.print("Enter end time (HH:MM:SS): ");
         String end_time = scanner.nextLine();
 
+        //take error-checking functions from Nahom's class
         Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
         Timestamp end_timestamp = Timestamp.valueOf(date +  " " + end_time);
 
