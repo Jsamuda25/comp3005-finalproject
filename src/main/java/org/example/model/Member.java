@@ -772,7 +772,7 @@ public class Member extends User {
                 System.out.println("Start Date: " + resultSet.getDate("start_date"));
                 System.out.println("End Date: " + resultSet.getDate("end_date"));
                 System.out.println("room ID: " + resultSet.getInt("room_id"));
-                System.out.println("Room Number" + getRoomNumber(resultSet.getInt("room_id")));
+                System.out.println("Room Number " + getRoomNumber(resultSet.getInt("room_id")));
                 System.out.println();
             }
         } catch (SQLException e) {
@@ -858,7 +858,7 @@ public class Member extends User {
      * Displays the member's personal sessions.
      */
     public void viewPersonalSessions() {
-        System.out.println("--- View Your Scheduled Personal Training Sessions ---");
+        System.out.println("--- View Your Scheduled Sessions ---");
 
         System.out.println("Training Sessions");
         try {
@@ -913,9 +913,17 @@ public class Member extends User {
         String start_time = scanner.nextLine();
         System.out.print("Enter end time (HH:MM:SS): ");
         String end_time = scanner.nextLine();
+        Timestamp start_timestamp;
+        Timestamp end_timestamp;
 
-        Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
-        Timestamp end_timestamp = Timestamp.valueOf(date + " " + end_time);
+        try {
+            start_timestamp = Timestamp.valueOf(date + " " + start_time);
+            end_timestamp = Timestamp.valueOf(date + " " + end_time);
+        }
+        catch (Exception e){
+            System.out.println("Invalid date or time format.");
+            return;
+        }
 
         // Check if the end time is after the start time
         int span = start_timestamp.compareTo(end_timestamp);
@@ -968,8 +976,10 @@ public class Member extends User {
             statement.setBoolean(1, true);
             statement.setInt(2, session_id);
             statement.executeUpdate();
+            System.out.println("This session has been cancelled\n");
         } catch (Exception e) {
-            System.out.println("Sorry, could not reschedule");
+            System.out.println(e);
+            return;
         }
     }
 
