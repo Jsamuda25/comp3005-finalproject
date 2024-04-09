@@ -6,6 +6,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Properties;
 
+/**
+ * This class is used to connect to the PostgreSQL database
+ * It reads the postgres.properties file in resources and gets your username and password for the database called FinalProject
+ * The postgres.properties file should be placed in src/main/resources and should have the following format:
+ * user=your_username
+ * password=your_password
+ * It then connects to the database
+ * It also has a method to close the connection
+ */
 public class PostgresConnection {
 
     /**

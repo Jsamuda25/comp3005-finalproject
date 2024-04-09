@@ -5,29 +5,23 @@ import java.util.*;
 public class View {
 
     private final static Scanner scanner = InputScanner.getInstance();
+
+    // Constants for the different menus
     private static final List<String> LOGIN_MENU_OPTIONS = Arrays.asList("Login", "Register", "Exit");
     private static final List<String> MEMBER_MENU_OPTIONS = Arrays.asList("Profile Management", "Dashboard Display", "Schedule Management", "Logout");
     private static final List<String> TRAINER_MENU_OPTIONS = Arrays.asList("Schedule Management", "Member Profile Viewing", "Logout");
     private static final List<String> ADMIN_MENU_OPTIONS = Arrays.asList("Room Booking Management", "Equipment Maintenance Monitoring", "Class Schedule Updating", "Billing and Payment Processing", "Logout");
 
     /**
-     * Helper method that gets an integer input from the user
-     *
-     * @return an optional containing the integer input if it is valid
+     * Displays a welcome message
      */
-    public static Optional<Integer> getIntegerInput() {
-        try {
-            return Optional.of(scanner.nextInt());
-        } catch (InputMismatchException e) {
-            scanner.nextLine();
-            return Optional.empty();
-        }
-    }
-
     public void welcome() {
         System.out.println("Welcome to the Health and Fitness System!");
     }
 
+    /**
+     * Displays a goodbye message
+     */
     public void logoutMessage() {
         System.out.println("You have been logged out.");
     }
@@ -92,7 +86,7 @@ public class View {
     }
 
     /**
-     * Diplays the member menu and returns the user's choice
+     * Displays the member menu and returns the user's choice
      *
      * @return the user's choice
      */
@@ -133,6 +127,28 @@ public class View {
     }
 
     /**
+     * Displays the member profile menu and returns the user's choice
+     *
+     * @return the user's choice
+     */
+    public int billingAndPaymentMenu() {
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("View Billings", "Process Payment", "Back"));
+        menu(options);
+        return getChoice(options);
+    }
+
+    /**
+     * Displays the member dashboard menu and returns the user's choice
+     *
+     * @return the user's choice
+     */
+    public int memberDashboardMenu() {
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("Display Exercise Routines", "Fitness Achievements", "Health Statistics", "Back"));
+        menu(options);
+        return getChoice(options);
+    }
+
+    /**
      * Helper method that prompts the user to enter a choice
      *
      * @param options the list of options to choose from
@@ -163,19 +179,25 @@ public class View {
         }
     }
 
+    /**
+     * Closes the scanner
+     */
     public void close() {
         scanner.close();
     }
 
-    public int billingAndPaymentMenu() {
-        ArrayList<String> options = new ArrayList<>(Arrays.asList("View Billing and Payment", "Process Payment", "Back"));
-        menu(options);
-        return getChoice(options);
+    /**
+     * Helper method that gets an integer input from the user
+     *
+     * @return an optional containing the integer input if it is valid
+     */
+    public static Optional<Integer> getIntegerInput() {
+        try {
+            return Optional.of(scanner.nextInt());
+        } catch (InputMismatchException e) {
+            scanner.nextLine();
+            return Optional.empty();
+        }
     }
 
-    public int memberDashboardMenu() {
-        ArrayList<String> options = new ArrayList<>(Arrays.asList("Display Exercise Routines", "Fitness Achievements", "Health Statistics", "Back"));
-        menu(options);
-        return getChoice(options);
-    }
 }

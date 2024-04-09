@@ -20,7 +20,6 @@ public class HealthFitnessController {
      * Handles the menu for the member user type
      */
     private void member() {
-        // TODO: handle member menu
         Member member = new Member(healthFitness.getCurrentUser());
         while (true) {
             switch (view.memberMenu()) {
@@ -28,7 +27,7 @@ public class HealthFitnessController {
                     member.profileManagement();
                     break;
                 case 2:
-                    memberDashBoardDisplay(member);
+                    memberDashBoardDisplay(member);  // Multi option Dashboard Display Menu
                     break;
                 case 3:
                     member.scheduleManagement();
@@ -46,7 +45,6 @@ public class HealthFitnessController {
      * Handles the menu for the trainer user type
      */
     private void trainer() {
-        // TODO: handle trainer menu
         while (true) {
             switch (view.trainerMenu()) {
                 case 1:
@@ -68,13 +66,12 @@ public class HealthFitnessController {
      * Handles the menu for the admin user type
      */
     private void admin() {
-        // TODO: handle admin menu
         Admin admin = new Admin(healthFitness.getCurrentUser());
 
         while (true) {
             switch (view.adminMenu()) {
                 case 1:
-                    adminRoomBooking(admin);
+                    adminRoomBooking(admin);  // Multi option Room Booking Menu
                     break;
                 case 2:
                     admin.equipmentMaintenanceMonitoring();
@@ -83,7 +80,7 @@ public class HealthFitnessController {
                     admin.classScheduleUpdating();
                     break;
                 case 4:
-                    billingAndPaymentProcessing(admin);
+                    billingAndPaymentProcessing(admin);  // Multi option Billing and Payment Processing Menu
                     break;
                 case 5:
                     return;

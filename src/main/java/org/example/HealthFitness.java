@@ -5,7 +5,10 @@ import org.example.model.User.UserType;
 
 import java.sql.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
+
+import static org.example.View.getIntegerInput;
 
 
 public class HealthFitness {
@@ -74,6 +77,8 @@ public class HealthFitness {
         UserType userType;
         int userId;
         connection = PostgresConnection.connect();
+
+        // Extracting the user's first name, last name, username, and password
         String first_name = registerInfo.get(0);
         String last_name = registerInfo.get(1);
         String username = registerInfo.get(2);
@@ -81,25 +86,22 @@ public class HealthFitness {
         String name = first_name + " " + last_name;
 
         System.out.print("Enter user type (MEMBER=0, TRAINER=1, ADMIN=2): ");
-        int type=scanner.nextInt();
-        scanner.nextLine();
+        Optional<Integer> choice = getIntegerInput();
+        while (choice.isEmpty() || choice.get() < 0 || choice.get() > 2) {
+            System.out.print("Invalid input. Please enter a valid user type (MEMBER=0, TRAINER=1, ADMIN=2): ");
+            choice = getIntegerInput();
+        }
+        int type = choice.get();
 
-        if(type==0){
-            userType= UserType.MEMBER;
-        }
-        else if(type==1){
+        if(type==0)
+            userType = UserType.MEMBER;
+        else if(type==1)
             userType = UserType.TRAINER;
-        }
-        else if(type==2){
+        else
             userType = UserType.ADMIN;
-        }
-        else{
-            System.out.println("Invalid type selected.");
-            return false;
-        }
 
         try {
-            String query = "SELECT username FROM users WHERE username=?";
+            String query = "SELECT username FROM users WHERE username=?";  // Check if username is taken
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, username);
             ResultSet res = statement.executeQuery();
@@ -108,84 +110,65 @@ public class HealthFitness {
                 System.out.println("This username is taken, please choose a different one.");
                 return false;
             }
-            else {
-                if(type>0){
-                    System.out.println("Welcome new staff member!");
-                    query = "INSERT INTO users(username, password, name, typeofuser) " +
-                            "VALUES(?,?,?,?)";
-                    statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-                    statement.setString(1, username);
-                    statement.setString(2, password);
-                    statement.setString(3, name);
-                    statement.setObject(4, userType, Types.OTHER);
-                    int affectedRows = statement.executeUpdate();
-                    if (affectedRows == 0) {
-                        throw new SQLException("Creating user failed, no rows affected.");
-                    }
 
-                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            userId = generatedKeys.getInt(1);
-                            currentUser = new User(username, userType, userId);
+            Timestamp currentTimestamp = null;
+            if (type == 0) {  // If the user is a member
+                System.out.println("Pay the membership fee to confirm your registration: ");
+                System.out.print("Input 1 to confirm payment, otherwise your registration will be cancelled: ");
+                int resPay = scanner.nextInt();
+                scanner.nextLine();
 
-                        } else {
-                            throw new SQLException("Creating user failed, no ID obtained.");
-                        }
-                    }
+                currentTimestamp = new Timestamp(System.currentTimeMillis());
+
+                if(resPay!=1){
+                    System.out.println("Your registration has been cancelled.");
+                    return false;
                 }
-                else {
-                    System.out.println("Pay the membership fee to confirm your registration: ");
-                    System.out.print("Input 1 to confirm payment, otherwise your registration will be cancelled: ");
-                    scanner = InputScanner.getInstance();
-                    int resPay = scanner.nextInt();
-                    scanner.nextLine();
+            }
 
-                    Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            if(type>0)
+                System.out.println("Welcome new staff member!");
+            else
+                System.out.println("Welcome new member!");
 
-                    if (resPay == 1) {
+            // Insert the user into the database
+            query = "INSERT INTO users(username, password, name, typeofuser) " +
+                    "VALUES(?,?,?,?)";
+            statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            statement.setString(1, username);
+            statement.setString(2, password);
+            statement.setString(3, name);
+            statement.setObject(4, userType, Types.OTHER);
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Creating user failed, no rows affected.");
+            }
 
-                        query = "INSERT INTO users(username, password, name, typeofuser) " +
-                                "VALUES(?,?,?,?)";
-                        statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-                        statement.setString(1, username);
-                        statement.setString(2, password);
-                        statement.setString(3, name);
-                        statement.setObject(4, userType, Types.OTHER);
-                        int affectedRows = statement.executeUpdate();
-                        if (affectedRows == 0) {
-                            throw new SQLException("Creating user failed, no rows affected.");
-                        }
+            // Get the user's ID and create a new User object
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    userId = generatedKeys.getInt(1);
+                    currentUser = new User(username, userType, userId);
+                } else {
+                    throw new SQLException("Creating user failed, no ID obtained.");
+                }
+            }
 
-                        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                            if (generatedKeys.next()) {
-                                userId = generatedKeys.getInt(1);
-                                currentUser = new User(username, userType, userId);
-
-                            } else {
-                                throw new SQLException("Creating user failed, no ID obtained.");
-                            }
-                        }
-
-
-                        query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
-                        try {
-                            statement = connection.prepareStatement(query);
-                            statement.setInt(1, userId);
-                            statement.setDouble(2, 150);
-                            statement.setInt(3, 0);
-                            statement.setBoolean(4, true);
-                            statement.setTimestamp(5, currentTimestamp);
-                            statement.executeUpdate();
-                            System.out.println("Your payment has been processed. \n");
-                        } catch (Exception e) {
-                            System.out.println(e);
-                            return false;
-                        }
-
-                    } else {
-                        System.out.println("Your registration has been canceled.");
-                        return false;
-                    }
+            // Insert the user's payment into the database
+            if (type == 0) {
+                query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
+                try {
+                    statement = connection.prepareStatement(query);
+                    statement.setInt(1, userId);
+                    statement.setDouble(2, 150);
+                    statement.setInt(3, 0);
+                    statement.setBoolean(4, true);
+                    statement.setTimestamp(5, currentTimestamp);
+                    statement.executeUpdate();
+                    System.out.println("Your payment has been processed. \n");
+                } catch (Exception e) {
+                    System.out.println("Error: " + e);
+                    return false;
                 }
             }
         } catch (Exception e) {
@@ -196,14 +179,27 @@ public class HealthFitness {
         return true;
     }
 
+    /**
+     * Logs out the user
+     */
     public void logout() {
         currentUser = null;
     }
 
+    /**
+     * Gets the current user's type
+     *
+     * @return the current user's type
+     */
     public UserType getUserType() {
         return currentUser.userType;
     }
 
+    /**
+     * Gets the current user
+     *
+     * @return the current user
+     */
     public User getCurrentUser() {
         return currentUser;
     }

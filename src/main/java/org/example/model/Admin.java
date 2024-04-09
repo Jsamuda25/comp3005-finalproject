@@ -1,7 +1,6 @@
 package org.example.model;
 
 import org.example.InputScanner;
-import org.example.Main;
 import org.example.PostgresConnection;
 import org.example.View;
 
@@ -12,16 +11,32 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Scanner;
 
+/**
+ * The Admin class extends the User class and represents an admin user in the system.
+ * It provides methods for managing roomId bookings, classes, and billing.
+ */
 public class Admin extends User {
 
-    private final Connection connection = Main.connection;
+    // Connection to the PostgreSQL database
+    private final Connection connection = PostgresConnection.connect();
 
+    /**
+     * Constructs an Admin object by calling the super constructor of the User class.
+     *
+     * @param user the User object to be converted to an Admin object
+     */
     public Admin(User user) {
         super(user);
     }
 
-    private static String getTypeOfFee(ResultSet resultSet) throws SQLException {
-        return switch (resultSet.getInt("type_of_fee")) {
+    /**
+     * Get the type of fee based on the type_of_fee column in the billing table
+     *
+     * @param type_of_fee the type of fee
+     * @return the type of fee
+     */
+    private static String getTypeOfFee(int type_of_fee) {
+        return switch (type_of_fee) {
             case 0 -> "Membership";
             case 1 -> "Class";
             case 2 -> "Training Session";
@@ -30,10 +45,12 @@ public class Admin extends User {
     }
 
     /**
-     * Admin can view room bookings from the database
+     * This method retrieves roomId bookings from the database and returns them as an ArrayList of RoomBooking records.
+     *
+     * @return an ArrayList of RoomBooking records
      */
     private ArrayList<RoomBooking> viewRoomBookingsHelper() {
-        // get room bookings from database
+        // get roomId bookings from database
         ArrayList<RoomBooking> bookings = new ArrayList<>();
 
         try {
@@ -41,21 +58,31 @@ public class Admin extends User {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                RoomBooking booking = new RoomBooking(resultSet.getInt("room_id"), resultSet.getInt("typeofbooking"), resultSet.getInt("session_id"), resultSet.getInt("class_id"), resultSet.getDate("date"), resultSet.getTime("start_time"), resultSet.getTime("end_time"));
+                RoomBooking booking = new RoomBooking(
+                        resultSet.getInt("room_booking_id"),
+                        resultSet.getInt("room_id"),
+                        resultSet.getInt("class_id"),
+                        resultSet.getDate("date"),
+                        resultSet.getTime("start_time"),
+                        resultSet.getTime("end_time")
+                );
                 bookings.add(booking);
             }
         } catch (SQLException e) {
-            System.err.println("Error retrieving room bookings.");
+            System.err.println("Error retrieving roomId bookings.");
         }
 
         return bookings;
     }
 
+    /**
+     * This method retrieves roomId bookings from the database and prints them.
+     */
     public void viewRoomBookings() {
         ArrayList<RoomBooking> bookings = viewRoomBookingsHelper();
 
         if (bookings.isEmpty()) {
-            System.out.println("No room bookings found.");
+            System.out.println("No roomId bookings found.");
             System.out.println();
             return;
         }
@@ -63,9 +90,9 @@ public class Admin extends User {
         System.out.println("Room Bookings:");
         for (RoomBooking booking : bookings) {
             System.out.println("Room Booking ID: " + booking.roomBookingId);
-            System.out.println("Type of Booking: " + booking.typeOfBooking);
-            System.out.println("Session ID: " + booking.sessionId);
-            System.out.println("Class ID: " + booking.class_id);
+            System.out.println("Room ID: " + booking.roomId);
+            System.out.println("Room Number:" + getRoomNumber(booking.roomId));
+            System.out.println("Class ID: " + booking.classId);
             System.out.println("Date: " + booking.Date);
             System.out.println("Start Time: " + booking.startTime);
             System.out.println("End Time: " + booking.endTime);
@@ -73,14 +100,19 @@ public class Admin extends User {
         }
     }
 
+    /**
+     * This method allows the admin to cancel a roomId booking.
+     */
     public void cancelRoomBooking() {
-        // Print room bookings
+        // Print roomId bookings
         ArrayList<RoomBooking> bookings = viewRoomBookingsHelper();
-        System.out.println("Select a room booking to cancel:");
+        System.out.println("Select a roomId booking to cancel:");
         for (int i = 0; i < bookings.size(); i++) {
             RoomBooking booking = bookings.get(i);
             System.out.print((i + 1) + ". Room Booking ID: " + booking.roomBookingId);
-            System.out.println("; Type of Booking: " + (booking.typeOfBooking == 0 ? "Training Session" : "Class"));
+            System.out.print(", Room Number: " + getRoomNumber(booking.roomId));
+            System.out.print(", Date: " + booking.Date);
+            System.out.println();
         }
         System.out.println((bookings.size() + 1) + ". Back");
 
@@ -92,28 +124,28 @@ public class Admin extends User {
             choice = View.getIntegerInput();
         }
         if (choice.get() == bookings.size() + 1) return;
+
         RoomBooking booking = bookings.get(choice.get() - 1);
 
         // Cancel Room Booking
         try {
-            String query = "DELETE FROM RoomBooking WHERE room_id = ?";
+            String query = "DELETE FROM RoomBooking WHERE room_booking_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, booking.roomBookingId);
             preparedStatement.executeUpdate();
             System.out.println("Room booking cancelled successfully.");
         } catch (SQLException e) {
-            System.err.println("Error cancelling room booking.");
+            System.err.println("Error cancelling roomId booking.");
             return;
         }
-
-        // Cancel Training Session or Class
-        if (booking.typeOfBooking == 0) {
-            cancelTrainingSession(booking.sessionId);
-        } else {
-            cancelClass(booking.class_id);
-        }
+        cancelClass(booking.classId);
     }
 
+    /**
+     * This method allows the admin to cancel a class.
+     *
+     * @param classId the ID of the class to be cancelled
+     */
     private void cancelClass(int classId) {
         // Cancel Class and update the trainer's availability
 
@@ -211,77 +243,9 @@ public class Admin extends User {
         }
     }
 
-    private void cancelTrainingSession(int session_id) {
-        // Cancel Training Session and update the trainer's availability
-
-        // Get the trainer's ID
-        Session trainingSession = null;
-        int member_id = 0;
-        try {
-            String query = "SELECT trainer_id, member_id, start_date, end_date FROM trainingsessions WHERE session_id = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, session_id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                trainingSession = new Session(resultSet.getInt("trainer_id"), resultSet.getTimestamp("start_date"), resultSet.getTimestamp("end_date"));
-                member_id = resultSet.getInt("member_id");
-            }
-        } catch (SQLException e) {
-            System.out.println("Error getting training session details.");
-            return;
-        }
-        assert trainingSession != null;
-
-        // Cancel the member's billing if its unpaid
-        try {
-            String query = "SELECT billing_id FROM billing WHERE member_id = ? AND type_of_fee = 2 AND paid = false";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, member_id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                int billingId = resultSet.getInt("billing_id");
-                query = "DELETE FROM billing WHERE billing_id = ?";
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setInt(1, billingId);
-                preparedStatement.executeUpdate();
-                System.out.println("Billing " + billingId + ": Member " + member_id + " bill for the Training Session is cancelled.");
-            } else {
-                // remove bill from billing table and print "Refund Processed for member_id with billing_id"
-                query = "DELETE FROM billing WHERE member_id = ? AND type_of_fee = 1 AND paid = true";
-                preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setInt(1, member_id);
-                preparedStatement.executeUpdate();
-                System.out.println("Training Session Refund Processed for member_id " + member_id);
-            }
-        } catch (SQLException e) {
-            System.err.println("Error cancelling member's billing.");
-            return;
-        }
-
-        // Delete the training session
-        try {
-            String query = "DELETE FROM trainingsessions WHERE session_id = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, session_id);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error cancelling training session.");
-            return;
-        }
-
-        // Insert a new row into the TrainerAvailability table
-        try {
-            String query = "INSERT INTO TrainerAvailability (trainer_id, start_time, end_time) VALUES (?, ?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, trainingSession.trainer_id);
-            preparedStatement.setTimestamp(2, trainingSession.startTime);
-            preparedStatement.setTimestamp(3, trainingSession.endTime);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println("Error updating Trainer Availability.");
-        }
-    }
-
+    /**
+     * This method allows the admin to monitor equipment maintenance.
+     */
     public void equipmentMaintenanceMonitoring() {
         // Print out all equipment and let user update the maintanence data for any equipment to today's date
         try {
@@ -317,7 +281,6 @@ public class Admin extends User {
             System.out.println("Invalid input. Please enter a number.");
             equipmentId = View.getIntegerInput();
         }
-
         if (equipmentId.get() == -1) return;
 
         // Update maintenance date
@@ -333,10 +296,14 @@ public class Admin extends User {
         }
     }
 
+    /**
+     * This method allows the admin to manage classes.
+     * The admin can create new classes, edit existing classes, and view all classes.
+     */
     public void classScheduleUpdating() {
         while (true) {
             System.out.println("1. create new class");
-            System.out.println("2. edit existing class room");
+            System.out.println("2. edit existing class roomId");
             System.out.println("3. edit existing class time/date");
             System.out.println("4. edit existing class trainer");
             System.out.println("5. edit existing class name");
@@ -374,10 +341,14 @@ public class Admin extends User {
 
     }
 
+    /**
+     * This method is used to create a new class in the system.
+     */
     public void createNewClass() {
         try {
             Scanner scanner = InputScanner.getInstance();
 
+            // Get class details from the user
             System.out.println("Enter class details:");
             System.out.print("Trainer ID: ");
             int trainerId = scanner.nextInt();
@@ -399,7 +370,7 @@ public class Admin extends User {
                 return;
             }
 
-            // Check if room is available
+            // Check if roomId is available
             if (!isRoomAvailable(roomId, startDate, endDate)) {
                 System.out.println("Room is not available during this time.");
                 return;
@@ -426,13 +397,14 @@ public class Admin extends User {
             }
 
             // Insert entry into RoomBooking
-            String roomBookingInsertQuery = "INSERT INTO RoomBooking (typeOfBooking, session_id, class_id, date, start_time, end_time) " +
-                                            "VALUES (1, NULL, ?, ?, ?, ?)";
+            String roomBookingInsertQuery = "INSERT INTO RoomBooking (room_id, class_id, date, start_time, end_time) " +
+                                            "VALUES (?, ?, ?, ?, ?)";
             PreparedStatement roomBookingInsertStatement = connection.prepareStatement(roomBookingInsertQuery);
-            roomBookingInsertStatement.setInt(1, classId);
-            roomBookingInsertStatement.setDate(2, new Date(startDate.getTime()));
-            roomBookingInsertStatement.setTime(3, new Time(startDate.getTime()));
-            roomBookingInsertStatement.setTime(4, new Time(endDate.getTime()));
+            roomBookingInsertStatement.setInt(1, roomId);
+            roomBookingInsertStatement.setInt(2, classId);
+            roomBookingInsertStatement.setDate(3, new Date(startDate.getTime()));
+            roomBookingInsertStatement.setTime(4, new Time(startDate.getTime()));
+            roomBookingInsertStatement.setTime(5, new Time(endDate.getTime()));
             roomBookingInsertStatement.executeUpdate();
 
             System.out.println("New class created successfully.");
@@ -441,8 +413,9 @@ public class Admin extends User {
         }
     }
 
-
-
+    /**
+     * This method allows the admin to edit the time and date of a class.
+     */
     public void editClassTimeDate() {
         try {
             viewClasses();
@@ -453,8 +426,8 @@ public class Admin extends User {
             int classId = scanner.nextInt();
             scanner.nextLine();
 
-            Timestamp newStartTime = null;
-            Timestamp newEndTime = null;
+            Timestamp newStartTime;
+            Timestamp newEndTime;
 
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             dateFormat.setLenient(false);
@@ -473,7 +446,7 @@ public class Admin extends User {
                 return;
             }
 
-            // Get new room ID
+            // Get new roomId ID
             System.out.print("Enter the new Room ID: ");
             int newRoomId = scanner.nextInt();
 
@@ -490,18 +463,18 @@ public class Admin extends User {
                 return;
             }
 
-            // Check if new start time, end time, and room are available
+            // Check if new start time, end time, and roomId are available
             if (!isTrainerAvailable(trainerId, newStartTime, newEndTime)) {
                 System.out.println("The trainer is not available during this time.");
                 return;
             }
 
             if (!isRoomAvailable(newRoomId, newStartTime, newEndTime)) {
-                System.out.println("The new room is not available during this time.");
+                System.out.println("The new roomId is not available during this time.");
                 return;
             }
 
-            // Update class time/date and room
+            // Update class time/date and roomId
             String updateClassTimeRoomQuery = "UPDATE Class SET start_date = ?, end_date = ?, room_id = ? WHERE class_id = ?";
             PreparedStatement updateClassTimeRoomStatement = connection.prepareStatement(updateClassTimeRoomQuery);
             updateClassTimeRoomStatement.setTimestamp(1, newStartTime);
@@ -520,16 +493,18 @@ public class Admin extends User {
             updateRoomBookingStatement.setInt(5, classId);
             updateRoomBookingStatement.executeUpdate();
 
-            System.out.println("Class time/date and room updated successfully.");
+            System.out.println("Class time/date and roomId updated successfully.");
         } catch (SQLException e) {
-            System.err.println("Error editing class time/date and room: " + e.getMessage());
+            System.err.println("Error editing class time/date and roomId: " + e.getMessage());
         }
     }
 
+    /**
+     * This method allows the admin to edit the name of a class.
+     */
     public void editClassName() {
         try {
-            viewClasses();
-
+            viewClasses();  // Display all classes
             Scanner scanner = InputScanner.getInstance();
 
             // Get class ID to edit name
@@ -554,21 +529,23 @@ public class Admin extends User {
         }
     }
 
+    /**
+     * This method allows the admin to edit the roomId of a class.
+     */
     public void editClassRoom() {
         try {
-            viewClasses();
-
+            viewClasses();  // Display all classes
             Scanner scanner = InputScanner.getInstance();
 
-            System.out.print("Enter the ID of the class to change the room for: ");
+            System.out.print("Enter the ID of the class to change the roomId for: ");
             int classId = scanner.nextInt();
 
             System.out.print("Enter the new Room ID: ");
             int newRoomId = scanner.nextInt();
 
             // Get class start and end time
-            Timestamp classStartTime = null;
-            Timestamp classEndTime = null;
+            Timestamp classStartTime;
+            Timestamp classEndTime;
             String getClassTimeQuery = "SELECT start_date, end_date FROM Class WHERE class_id = ?";
             PreparedStatement getClassTimeStatement = connection.prepareStatement(getClassTimeQuery);
             getClassTimeStatement.setInt(1, classId);
@@ -581,13 +558,13 @@ public class Admin extends User {
                 return;
             }
 
-            // Check if new room is available during class time
+            // Check if new roomId is available during class time
             if (!isRoomAvailable(newRoomId, classStartTime, classEndTime)) {
-                System.out.println("The new room is not available during this time.");
+                System.out.println("The new roomId is not available during this time.");
                 return;
             }
 
-            // Update class room
+            // Update class roomId
             String updateClassRoomQuery = "UPDATE Class SET room_id = ? WHERE class_id = ?";
             PreparedStatement updateClassRoomStatement = connection.prepareStatement(updateClassRoomQuery);
             updateClassRoomStatement.setInt(1, newRoomId);
@@ -601,12 +578,19 @@ public class Admin extends User {
             updateRoomBookingStatement.setInt(2, classId);
             updateRoomBookingStatement.executeUpdate();
 
-            System.out.println("Class room updated successfully.");
+            System.out.println("Class roomId updated successfully.");
         } catch (SQLException e) {
-            System.err.println("Error editing class room: " + e.getMessage());
+            System.err.println("Error editing class roomId: " + e.getMessage());
         }
     }
 
+    /**
+     * This method allows the admin to change the trainer of a class.
+     * It first displays all the classes, then prompts the admin to enter the ID of the class they want to change the trainer for.
+     * The admin then enters the ID of the new trainer.
+     * The method checks if the new trainer is available during the class time.
+     * If the new trainer is available, the method updates the trainer of the class in the database.
+     */
     public void editClassTrainer() {
         try {
             viewClasses();
@@ -620,8 +604,8 @@ public class Admin extends User {
             int newTrainerId = scanner.nextInt();
 
             // Get class start and end time
-            Timestamp classStartTime = null;
-            Timestamp classEndTime = null;
+            Timestamp classStartTime;
+            Timestamp classEndTime;
             String getClassTimeQuery = "SELECT start_date, end_date FROM Class WHERE class_id = ?";
             PreparedStatement getClassTimeStatement = connection.prepareStatement(getClassTimeQuery);
             getClassTimeStatement.setInt(1, classId);
@@ -653,6 +637,16 @@ public class Admin extends User {
         }
     }
 
+    /**
+     * This method checks if a trainer is available during a specific time period.
+     * It queries the TrainerAvailability table in the database to see if the trainer is available during the specified start and end time.
+     *
+     * @param trainerId the ID of the trainer
+     * @param startDate the start time of the period
+     * @param endDate   the end time of the period
+     * @return true if the trainer is available, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
     private boolean isTrainerAvailable(int trainerId, Timestamp startDate, Timestamp endDate) throws SQLException {
         String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " +
                        "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
@@ -666,7 +660,30 @@ public class Admin extends User {
         return count > 0;
     }
 
+    /**
+     * This method checks if a roomId is available during a specific time period.
+     * It queries the RoomBooking table in the database to see if the roomId is available during the specified start and end time.
+     *
+     * @param roomId    the ID of the roomId
+     * @param startDate the start time of the period
+     * @param endDate   the end time of the period
+     * @return true if the roomId is available, false otherwise
+     * @throws SQLException if a database access error occurs
+     */
     private boolean isRoomAvailable(int roomId, Timestamp startDate, Timestamp endDate) throws SQLException {
+
+        // Verify if the room exists
+        String roomQuery = "SELECT COUNT(*) AS count FROM Room WHERE room_id = ?";
+        PreparedStatement roomStatement = connection.prepareStatement(roomQuery);
+        roomStatement.setInt(1, roomId);
+        ResultSet roomResultSet = roomStatement.executeQuery();
+        roomResultSet.next();
+        int roomCount = roomResultSet.getInt("count");
+        if (roomCount == 0) {
+            System.out.println("Room with ID " + roomId + " does not exist.");
+            return false;
+        }
+
         String query = "SELECT COUNT(*) AS count FROM RoomBooking " +
                        "WHERE room_id = ? AND date = ? " +
                        "AND ? < end_time AND start_time < ?";
@@ -681,6 +698,10 @@ public class Admin extends User {
         return count == 0;
     }
 
+    /**
+     * This method displays all the classes in the system.
+     * It queries the Class table in the database and prints out the details of each class.
+     */
     private void viewClasses() {
         try {
             String query = "SELECT * FROM class ORDER BY start_date";
@@ -693,15 +714,19 @@ public class Admin extends User {
                 System.out.println("Trainer ID: " + resultSet.getInt("trainer_id"));
                 System.out.println("Start Date: " + resultSet.getDate("start_date"));
                 System.out.println("End Date: " + resultSet.getDate("end_date"));
-                System.out.println("room ID: " + resultSet.getInt("room_id"));
+                System.out.println("roomId ID: " + resultSet.getInt("room_id"));
+                System.out.println("Room Number: " + getRoomNumber(resultSet.getInt("room_id")));
                 System.out.println();
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving class data.");
-            return;
         }
     }
 
+    /**
+     * This method displays all the billing records that have been paid.
+     * It queries the Billing table in the database and prints out the details of each billing record.
+     */
     public void viewBillingAndPayment() {
         // Print out all billing that are paid
         System.out.println("Billing History: ");
@@ -714,21 +739,23 @@ public class Admin extends User {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                String typeOfFee = getTypeOfFee(resultSet);
-
                 System.out.println("Billing ID: " + resultSet.getInt("billing_id"));
                 System.out.println("Name: " + resultSet.getString("name"));
+                System.out.println("Type of Fee" + getTypeOfFee(resultSet.getInt("type_of_fee")));
                 System.out.println("Amount: " + resultSet.getDouble("fee"));
-                System.out.println("Type of Fee: " + typeOfFee);
                 System.out.println("Date: " + resultSet.getDate("date"));
                 System.out.println();
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving billing data.");
         }
-
     }
 
+    /**
+     * This method processes payments for unpaid bills.
+     * It first displays all the unpaid bills, then prompts the admin to enter the ID of the bill they want to process payment for.
+     * The method then updates the paid status of the bill in the database.
+     */
     public void processPayment() {
         // Print out all Payments that are not paid
         System.out.println("Payments to Process: ");
@@ -740,8 +767,8 @@ public class Admin extends User {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                String typeOfFee = getTypeOfFee(resultSet);
 
+                String typeOfFee = getTypeOfFee(resultSet.getInt("type_of_fee"));
                 System.out.println("Billing ID: " + resultSet.getInt("billing_id"));
                 System.out.println("Name: " + resultSet.getString("name"));
                 System.out.println("Amount: " + resultSet.getDouble("fee"));
@@ -761,7 +788,6 @@ public class Admin extends User {
             System.out.println("Invalid input. Please enter a number.");
             billingId = View.getIntegerInput();
         }
-
         if (billingId.get() == -1) return;
 
         // Process Payment
@@ -776,10 +802,16 @@ public class Admin extends User {
         }
     }
 
-    private record RoomBooking(int roomBookingId, int typeOfBooking, int sessionId, int class_id, Date Date,
+    /**
+     * The RoomBooking record represents a roomId booking in the system.
+     */
+    private record RoomBooking(int roomBookingId, int roomId, int classId, Date Date,
                                Time startTime, Time endTime) {
     }
 
+    /**
+     * The Session record represents a session in the system.
+     */
     private record Session(int trainer_id, Timestamp startTime, Timestamp endTime) {
     }
 }

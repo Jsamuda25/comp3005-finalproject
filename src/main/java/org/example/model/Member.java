@@ -1,26 +1,33 @@
 package org.example.model;
 
-import jdk.jshell.spi.ExecutionControlProvider;
 import org.example.InputScanner;
 import org.example.PostgresConnection;
 import org.example.View;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.Scanner;
-import java.util.SimpleTimeZone;
-import java.util.concurrent.ExecutionException;
 
+/**
+ * The Member class extends the User class and provides functionality for a member of a system to manage their profile, health metrics, and fitness goals.
+ */
 public class Member extends User {
 
     public static Connection connection = null;
 
+    /**
+     * Constructor for the Member class.
+     *
+     * @param user The User object to initialize the Member object.
+     */
     public Member(User user) {
         super(user);
     }
 
+    /**
+     * Provides an interface for the member to manage their profile.
+     */
     public void profileManagement() {
         Scanner scanner = InputScanner.getInstance();
         System.out.println("Welcome to profile management, what information would you like to modify?");
@@ -42,7 +49,9 @@ public class Member extends User {
         }
     }
 
-    //helper function for profileManagement()
+    /**
+     * Provides an interface for the member to update their personal information.
+     */
     public void updatePersonalInfo() {
         Scanner scanner = InputScanner.getInstance();
         System.out.println("You can change the following details:");
@@ -59,14 +68,16 @@ public class Member extends User {
             modifyPassword();
         } else if (response == 3) {
             modifyName();
-        } else if (response == 4) {
-        } else {
+        } else if (response > 4) {
             System.out.println("Invalid selection");
         }
 
     }
 
-    public boolean modifyUsername() {
+    /**
+     * Allows the member to modify their username.
+     */
+    public void modifyUsername() {
 
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Input new username: ");
@@ -82,7 +93,6 @@ public class Member extends User {
 
             if (res.next() && res.getString("username").equals(newUser)) {
                 System.out.println("This username is taken, please choose a different one.");
-                return false;
             } else {
 
                 String query = "UPDATE users SET username = ? WHERE id = ?";
@@ -100,20 +110,20 @@ public class Member extends User {
                         }
 
                     } catch (Exception e) {
-                        System.out.println(e);
-                        return false;
+                        System.out.println("Error: " + e);
                     }
                 }
             }
         } catch (Exception e) {
-            return false;
+            System.out.println("Error: " + e);
         }
-
-        return true;
 
     }
 
-    public boolean modifyPassword() {
+    /**
+     * Allows the member to modify their password.
+     */
+    public void modifyPassword() {
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Input new password: ");
         scanner.nextLine();
@@ -134,18 +144,17 @@ public class Member extends User {
                     }
                 } catch (Exception e) {
                     System.out.println(e);
-                    return false;
                 }
             }
-
         } catch (Exception e) {
             System.out.println(e);
-            return false;
         }
-        return true;
     }
 
-    public boolean modifyName() {
+    /**
+     * Allows the member to modify their name.
+     */
+    public void modifyName() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
         System.out.print("Enter first name: ");
@@ -170,19 +179,17 @@ public class Member extends User {
                     }
                 } catch (Exception e) {
                     System.out.println(e);
-                    return false;
                 }
             }
         } catch (Exception e) {
             System.out.println(e);
-            return false;
         }
-
-        return true;
 
     }
 
-    //helper function for profileManagement()
+    /**
+     * Provides an interface for the member to manage their health metrics.
+     */
     public void selectHealthOption() {
         System.out.println("Health Metrics Menu");
         System.out.println("1. View Health Metrics");
@@ -200,12 +207,13 @@ public class Member extends User {
             addHealthMetrics();
         } else if (response == 4) {
             profileManagement();
-        } else {
         }
-
 
     }
 
+    /**
+     * Displays the health metrics of the member.
+     */
     public void viewHealthMetrics() {
         System.out.println("Your Health Metrics");
         connection = PostgresConnection.connect();
@@ -229,6 +237,9 @@ public class Member extends User {
 
     }
 
+    /**
+     * Allows the member to edit their health metrics.
+     */
     public void editHealthMetrics() {
         viewHealthMetrics();
         Scanner scanner = InputScanner.getInstance();
@@ -269,19 +280,20 @@ public class Member extends User {
             System.out.print("Enter new metric note: ");
             String note = scanner.nextLine();
             updateMetricNote(metric_id, note);
-        } else if (response == 5) {
-        } else {
         }
 
     }
 
+    /**
+     * Allows the member to add new health metrics.
+     */
     public void addHealthMetrics() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
         System.out.print("Enter Metric Type: ");
         String metric = scanner.nextLine();
         System.out.print("Enter value: ");
-        Double value = scanner.nextDouble();
+        double value = scanner.nextDouble();
         scanner.nextLine();
         System.out.print("Enter unit of measurement: ");
         String unit = scanner.nextLine();
@@ -308,7 +320,12 @@ public class Member extends User {
         }
     }
 
-
+    /**
+     * Updates the type of specific health metric.
+     *
+     * @param id          The ID of the health metric to be updated.
+     * @param metric_type The new type for the health metric.
+     */
     public void updateMetricType(int id, String metric_type) {
         connection = PostgresConnection.connect();
 
@@ -335,6 +352,12 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Updates the value of a specific health metric.
+     *
+     * @param id    The ID of the health metric to be updated.
+     * @param value The new value for the health metric.
+     */
     public void updateMetricValue(int id, Double value) {
 
         connection = PostgresConnection.connect();
@@ -363,6 +386,12 @@ public class Member extends User {
 
     }
 
+    /**
+     * Updates the unit of a specific health metric.
+     *
+     * @param id   The ID of the health metric to be updated.
+     * @param unit The new unit for the health metric.
+     */
     public void updateMetricUnit(int id, String unit) {
         connection = PostgresConnection.connect();
 
@@ -390,6 +419,12 @@ public class Member extends User {
 
     }
 
+    /**
+     * Updates the note of a specific health metric.
+     *
+     * @param id   The ID of the health metric to be updated.
+     * @param note The new note for the health metric.
+     */
     public void updateMetricNote(int id, String note) {
         connection = PostgresConnection.connect();
 
@@ -416,6 +451,9 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Provides an interface for the member to manage their fitness goals.
+     */
     public void selectFitnessFunction() {
         System.out.println("Fitness Goals Menu");
         System.out.println("1. View Fitness Goals");
@@ -434,12 +472,13 @@ public class Member extends User {
             addFitnessGoals();
         } else if (response == 4) {
             profileManagement();
-        } else {
         }
 
     }
 
-
+    /**
+     * Allows the member to add new fitness goals.
+     */
     public void addFitnessGoals() {
         Scanner scanner = InputScanner.getInstance();
         scanner.nextLine();
@@ -468,7 +507,9 @@ public class Member extends User {
 
     }
 
-    //helper function for profileManagement()
+    /**
+     * Allows the member to update their fitness goals.
+     */
     public void updateFitnessGoals() {
         viewFitnessGoals();
         Scanner scanner = InputScanner.getInstance();
@@ -480,6 +521,7 @@ public class Member extends User {
             return;
         }
 
+        // Provide options to update the fitness goal
         System.out.println("What attributes would you like to change?");
         System.out.println("1. Title");
         System.out.println("2. Description");
@@ -490,41 +532,48 @@ public class Member extends User {
         int response = scanner.nextInt();
         scanner.nextLine();
 
-        if (response == 1) {
+        if (response == 1) {  // Update title
             System.out.print("Enter new title: ");
             String title = scanner.nextLine();
             updateTitle(goal_id, title);
             updateFitnessGoals();
-        } else if (response == 2) {
+        } else if (response == 2) {  // Update description
             System.out.print("Enter new description: ");
             String des = scanner.nextLine();
             updateDescription(goal_id, des);
             updateFitnessGoals();
-        } else if (response == 3) {
+        } else if (response == 3) {  // Update end date
             System.out.print("Enter new end date (YYYY-MM-DD):  ");
             String date = scanner.nextLine();
             modifyDate(goal_id, date);
             updateFitnessGoals();
-        } else if (response == 4) {
+        } else if (response == 4) {  // Update completion status
             System.out.println("Enter new status (0 = Incomplete, 1 = Complete): ");
             int status = scanner.nextInt();
             boolean stat = false;
 
-            if (status == 0) {
-                stat = false;
+            if (status < 0 || status > 1) {
+                System.out.println("Invalid value for status:");
+                return;
             } else if (status == 1) {
                 stat = true;
-            } else {
-                System.out.println("Invalid value for status:");
             }
+
             updateStatus(goal_id, stat);
             updateFitnessGoals();
         } else if (response == 5) {
             profileManagement();
         } else {
+            System.out.println("Invalid selection");
         }
     }
 
+    /**
+     * Updates the title of a specific fitness goal.
+     *
+     * @param id    The ID of the fitness goal to be updated.
+     * @param title The new title for the fitness goal.
+     */
     public void updateTitle(int id, String title) {
         connection = PostgresConnection.connect();
 
@@ -551,6 +600,12 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Updates the description of a specific fitness goal.
+     *
+     * @param id          The ID of the fitness goal to be updated.
+     * @param description The new description for the fitness goal.
+     */
     public void updateDescription(int id, String description) {
         connection = PostgresConnection.connect();
 
@@ -578,6 +633,12 @@ public class Member extends User {
 
     }
 
+    /**
+     * Modifies the end date of a specific fitness goal.
+     *
+     * @param id   The ID of the fitness goal to be updated.
+     * @param date The new end date for the fitness goal.
+     */
     public void modifyDate(int id, String date) {
         connection = PostgresConnection.connect();
 
@@ -604,6 +665,12 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Updates the status of a specific fitness goal.
+     *
+     * @param id        The ID of the fitness goal to be updated.
+     * @param completed The new status for the fitness goal.
+     */
     public void updateStatus(int id, boolean completed) {
 
         try {
@@ -629,7 +696,9 @@ public class Member extends User {
         }
     }
 
-
+    /**
+     * Displays the fitness goals of the member.
+     */
     public void viewFitnessGoals() {
         connection = PostgresConnection.connect();
         System.out.println("Your fitness goals: ");
@@ -649,10 +718,12 @@ public class Member extends User {
         } catch (Exception e) {
             System.out.println(e);
         }
-
     }
 
-    public void scheduleManagement(){
+    /**
+     * Manages the member's schedule.
+     */
+    public void scheduleManagement() {
 
         System.out.println("--- Schedule Management Menu ---");
         System.out.println("What would you like to do?");
@@ -667,31 +738,26 @@ public class Member extends User {
         int response = scanner.nextInt();
         scanner.nextLine();
 
-        if(response==1){
+        if (response == 1) {
             joinClass();
-        }
-        else if(response==2){
+        } else if (response == 2) {
             scheduleSession();
-        }
-        else if(response == 3){
+        } else if (response == 3) {
             rescheduleSession();
 
-        }
-        else if(response == 4){
+        } else if (response == 4) {
             cancelSession();
-        }
-        else if(response == 5){
+        } else if (response == 5) {
             viewPersonalSessions();
-        }
-        else if(response==6){
-            return;
-        }
-        else{
+        } else if (response != 6) {
             System.out.println("Invalid selection");
             scheduleManagement();
         }
     }
 
+    /**
+     * Views the available classes for the member to join.
+     */
     private void viewAvailableClasses() {
         connection = PostgresConnection.connect();
         try {
@@ -706,51 +772,56 @@ public class Member extends User {
                 System.out.println("Start Date: " + resultSet.getDate("start_date"));
                 System.out.println("End Date: " + resultSet.getDate("end_date"));
                 System.out.println("room ID: " + resultSet.getInt("room_id"));
+                System.out.println("Room Number" + getRoomNumber(resultSet.getInt("room_id")));
                 System.out.println();
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving class data.");
-            return;
         }
     }
 
-    public void joinClass(){
+    /**
+     * Allows the member to join a class.
+     */
+    public void joinClass() {
         connection = PostgresConnection.connect();
         System.out.println("--- Available Classes ---");
         viewAvailableClasses();
+
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Enter the ID of the class you would like to join, otherwise input 0: ");
         int class_id = scanner.nextInt();
         scanner.nextLine();
 
-        if(class_id == 0){
+        if (class_id == 0) {  // Exit
             scheduleManagement();
             return;
         }
 
-        try{
+        // Check if member is already registered for the class
+        try {
             String query = "SELECT * FROM classmembers WHERE class_id = ? AND member_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, class_id);
             statement.setInt(2, getUserID());
             ResultSet res = statement.executeQuery();
-            if(res.next()){
+            if (res.next()) {
                 System.out.println("You are already registered for this class. \n");
                 return;
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
 
+        // Pay the fee to confirm enrollment
         System.out.println("Pay the fee to confirm enrollment");
         System.out.print("Input 1 to confirm payment, otherwise you will be removed from the class: ");
         int resPay = scanner.nextInt();
         scanner.nextLine();
-
         Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
 
-        if(resPay == 1){
+        if (resPay == 1) {
+            // Insert payment record
             String query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
             try {
                 PreparedStatement statement = connection.prepareStatement(query);
@@ -761,35 +832,35 @@ public class Member extends User {
                 statement.setTimestamp(5, currentTimestamp);
                 statement.executeUpdate();
                 System.out.println("Your payment has been processed. \n");
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 System.out.println(e);
                 return;
             }
 
-            try{
+            // Insert member into class
+            try {
                 query = "INSERT INTO classmembers(class_id, member_id) VALUES(?,?)";
                 PreparedStatement statement = connection.prepareStatement(query);
                 statement.setInt(1, class_id);
                 statement.setInt(2, getUserID());
                 statement.executeUpdate();
                 System.out.println("You have been added to this class, we look forward to seeing you!\n");
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 System.out.println(e);
-                return;
             }
-        }
-        else{
+        } else {
             System.out.println("Your registration has been canceled.");
-            return;
         }
 
     }
 
-    public void viewPersonalSessions(){
+    /**
+     * Displays the member's personal sessions.
+     */
+    public void viewPersonalSessions() {
         System.out.println("--- View Your Scheduled Personal Training Sessions ---");
 
+        System.out.println("Training Sessions");
         try {
             connection = PostgresConnection.connect();
             String query = "SELECT session_id, trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND cancelled = ?";
@@ -800,19 +871,36 @@ public class Member extends User {
             while (res.next()) {
                 System.out.println("Training session (ID#" + res.getInt("session_id") + ") with trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
             }
-            System.out.println("\n");
+            System.out.println();
         } catch (Exception e) {
             System.out.println(e);
         }
 
+        System.out.println("Classes");
+        try {
+            String query = "SELECT * FROM classmembers JOIN class ON classmembers.class_id = class.class_id WHERE member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet res = statement.executeQuery();
+            while (res.next()) {
+                System.out.println("Class (ID#" + res.getInt("class_id") + ") " + res.getString("class_name") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
+            }
+            System.out.println();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
 
     }
 
-    public void rescheduleSession(){
+    /**
+     * Allows the member to reschedule a session.
+     */
+    public void rescheduleSession() {
         viewPersonalSessions();
         viewTrainerAvailability();
         Scanner scanner = InputScanner.getInstance();
         connection = PostgresConnection.connect();
+
         System.out.print("Enter the ID of session you would like to reschedule: ");
         int session_id = scanner.nextInt();
         scanner.nextLine();
@@ -827,28 +915,29 @@ public class Member extends User {
         String end_time = scanner.nextLine();
 
         Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
-        Timestamp end_timestamp = Timestamp.valueOf(date +  " " + end_time);
+        Timestamp end_timestamp = Timestamp.valueOf(date + " " + end_time);
 
+        // Check if the end time is after the start time
         int span = start_timestamp.compareTo(end_timestamp);
-
-        if(span >= 0){
+        if (span >= 0) {
             System.out.println("ERROR: End timestamp must be greater than start timestamp.");
             return;
         }
+        System.out.println();
 
-        System.out.println("");
+        // Check if the trainer is available
         try {
             if (!isTrainerAvailable(trainer_id, start_timestamp, end_timestamp)) {
                 System.out.println("This trainer is not available during this date and time.");
                 return;
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             return;
         }
 
-        try{
+        // Update the session with the new time
+        try {
             String query = "UPDATE trainingsessions SET start_date = ?, end_date = ? WHERE session_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setTimestamp(1, start_timestamp);
@@ -857,15 +946,15 @@ public class Member extends User {
             statement.executeUpdate();
             Trainer trainer = new Trainer();
             trainer.deleteAvailabilitySlot(trainer_id, start_timestamp, end_timestamp);
-            updateRoomBooking(session_id, start_timestamp, end_timestamp);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Sorry, could not reschedule");
-            return;
         }
     }
 
-    public void cancelSession(){
+    /**
+     * Allows the member to cancel a session.
+     */
+    public void cancelSession() {
         viewPersonalSessions();
         Scanner scanner = InputScanner.getInstance();
         connection = PostgresConnection.connect();
@@ -873,66 +962,26 @@ public class Member extends User {
         int session_id = scanner.nextInt();
         scanner.nextLine();
 
-        try{
+        try {
             String query = "UPDATE trainingsessions SET cancelled = ? WHERE session_id = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setBoolean(1, true);
             statement.setInt(2, session_id);
             statement.executeUpdate();
-            deleteRoomBooking(session_id);
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Sorry, could not reschedule");
-            return;
         }
     }
 
-    public void updateRoomBooking(int session_id, Timestamp start_time, Timestamp end_time){
-        connection = PostgresConnection.connect();
-
-        Date date = new Date(start_time.getTime());
-        Time begin = new Time(start_time.getTime());
-        Time end = new Time(end_time.getTime());
-
-
-        try{
-            String query = "UPDATE roombooking SET start_time = ?, end_time = ?, date = ? WHERE session_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setTime(1, begin);
-            statement.setTime(2, end);
-            statement.setDate(3, date);
-            statement.setInt(4, session_id);
-            statement.executeUpdate();
+    /**
+     * Allows the member to schedule a session.
+     */
+    public void scheduleSession() {
+        if (!viewTrainerAvailability()) {
+            return;  // No available trainers
         }
-        catch (Exception e){
-            System.out.println(e);
-            System.out.println("Sorry, could not update room booking.");
-            return;
-        }
-    }
 
-    public void deleteRoomBooking(int session_id){
-        connection = PostgresConnection.connect();
-        try{
-            String query = "DELETE FROM roombooking where session_id = ?";
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setInt(1, session_id);
-            statement.executeUpdate();
-        }
-        catch (Exception e){
-            System.out.println(e);
-            System.out.println("Sorry, could not delete room booking.");
-            return;
-        }
-    }
-
-
-    public void scheduleSession(){
-        boolean avail = viewTrainerAvailability();
-
-        if(!avail){
-            return;
-        }
+        // Get the trainer ID, date, and time for the session
         System.out.println("--- Book session --- ");
         System.out.print("Enter Trainer ID: ");
         Scanner scanner = InputScanner.getInstance();
@@ -946,30 +995,34 @@ public class Member extends User {
         String end_time = scanner.nextLine();
 
         //take error-checking functions from Nahom's class
-        Timestamp start_timestamp = Timestamp.valueOf(date + " " + start_time);
-        Timestamp end_timestamp = Timestamp.valueOf(date +  " " + end_time);
+        Timestamp start_timestamp;
+        Timestamp end_timestamp;
+        try {
+            start_timestamp = Timestamp.valueOf(date + " " + start_time);
+            end_timestamp = Timestamp.valueOf(date + " " + end_time);
+        } catch (Exception e) {
+            System.out.println("Invalid date or time format.");
+            return;
+        }
 
         int span = start_timestamp.compareTo(end_timestamp);
-
-        if(span >= 0){
+        if (span >= 0) {
             System.out.println("ERROR: End timestamp must be greater than start timestamp.");
             return;
         }
 
-        System.out.println("");
+        System.out.println();
         try {
             if (!isTrainerAvailable(trainer_id, start_timestamp, end_timestamp)) {
                 System.out.println("This trainer is not available during this date and time.");
                 return;
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
             return;
         }
 
-
-
+        // Confirm payment to book session
         System.out.println("Please pay the fee to confirm session booking.");
         System.out.print("Input 1 to confirm payment, otherwise this session will be cancelled: ");
         int resPay = scanner.nextInt();
@@ -977,8 +1030,24 @@ public class Member extends User {
 
         Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
 
-        if(resPay == 1){
-           String query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
+        if (resPay == 1) {
+            // Insert the session into the database
+            String query = "INSERT INTO trainingsessions (member_id, trainer_id, start_date, end_date, cancelled) VALUES (?,?,?,?,?)";
+            try {
+                PreparedStatement statement = connection.prepareStatement(query);
+                statement.setInt(1, getUserID());
+                statement.setInt(2, trainer_id);
+                statement.setTimestamp(3, start_timestamp);
+                statement.setTimestamp(4, end_timestamp);
+                statement.setBoolean(5, false);
+                statement.executeUpdate();
+                System.out.println("We have scheduled your training session.\n");
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+
+            // Insert payment record
+            query = "INSERT INTO billing(member_id, fee, type_of_fee, paid, date) VALUES(?,?,?,?,?)";
             try {
                 PreparedStatement statement = connection.prepareStatement(query);
                 statement.setInt(1, getUserID());
@@ -990,39 +1059,25 @@ public class Member extends User {
                 System.out.println("Your payment has been processed! \n");
                 Trainer trainer = new Trainer();
                 trainer.deleteAvailabilitySlot(trainer_id, start_timestamp, end_timestamp);
-            }
-            catch (Exception e){
-                System.out.println(e);
-                return;
-            }
-
-            query = "INSERT INTO trainingsessions (member_id, trainer_id, start_date, end_date, cancelled) VALUES (?,?,?,?)";
-            try {
-                PreparedStatement statement = connection.prepareStatement(query);
-                statement.setInt(1, getUserID());
-                statement.setInt(2, trainer_id);
-                statement.setTimestamp(3, start_timestamp);
-                statement.setTimestamp(4, end_timestamp);
-                statement.setBoolean(5, false);
-                statement.executeUpdate();
-                System.out.println("We have scheduled your training session.\n");
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 System.out.println(e);
             }
-        }
-        else{
+        } else {
             System.out.println("Your registration has been canceled.");
-            return;
         }
 
     }
 
-
+    /**
+     * Checks if a trainer is available.
+     * @param trainerId The ID of the trainer.
+     * @param startDate The start date of the session.
+     * @param endDate The end date of the session.
+     * @return true if the trainer is available, false otherwise.
+     */
     private boolean isTrainerAvailable(int trainerId, Timestamp startDate, Timestamp endDate) throws SQLException {
         connection = PostgresConnection.connect();
-        String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " +
-                "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
+        String query = "SELECT COUNT(*) AS count FROM TrainerAvailability " + "WHERE trainer_id = ? AND ? <= end_time AND start_time <= ?";
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, trainerId);
@@ -1034,31 +1089,36 @@ public class Member extends User {
         return count > 0;
     }
 
-
-    private boolean viewTrainerAvailability(){
+    /**
+     * Displays the availability of trainers.
+     * @return true if there are available trainers, false otherwise.
+     */
+    private boolean viewTrainerAvailability() {
         connection = PostgresConnection.connect();
         System.out.println("See trainer availability below: ");
-        try{
+        try {
             String query = "SELECT * FROM TrainerAvailability";
             Statement stmt = connection.createStatement();
             stmt.executeQuery(query);
             ResultSet resultSet = stmt.getResultSet();
 
-            if(resultSet==null){
+            if (resultSet == null) {
                 System.out.println("Sorry, there are currently no available time slots.\n");
                 return false;
             }
-            while (resultSet.next()){
-                System.out.println("Trainer ID: "+  resultSet.getInt("trainer_id") + ", available "  + resultSet.getTimestamp("start_time") + " to " + resultSet.getTimestamp("end_time"));
+            while (resultSet.next()) {
+                System.out.println("Trainer ID: " + resultSet.getInt("trainer_id") + ", available " + resultSet.getTimestamp("start_time") + " to " + resultSet.getTimestamp("end_time"));
             }
             System.out.println("\n");
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e);
         }
         return true;
     }
 
+    /**
+     * Displays the exercise routines of the member.
+     */
     public void viewExerciseRoutines() {
         System.out.println("Exercise Routines: ");
 
@@ -1106,6 +1166,9 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Displays the fitness achievements of the member.
+     */
     public void viewFitnessAchievements() {
         // Show the fitness goals marked as completed
         System.out.println("Fitness Achievements: ");
@@ -1127,6 +1190,9 @@ public class Member extends User {
         }
     }
 
+    /**
+     * Displays the health statistics of the member.
+     */
     public void viewHealthStatistics() {
         // Get the most recent metric for each routine and display it
         System.out.println("Health Statistics: ");
