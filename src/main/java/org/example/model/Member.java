@@ -1333,7 +1333,7 @@ public class Member extends User {
 
     public void viewFavouriteTrainers(){
         System.out.println("Here are the trainers you have worked with the most:");
-        String query = "SELECT trainer_id, count(trainingsessions.trainer_id) AS session_count FROM Users, Trainingsessions WHERE users.id = trainingsessions.member_id AND users.id=? GROUP BY trainingsessions.trainer_id ORDER BY count(trainingsessions.trainer_id) DESC";
+        String query = "SELECT trainer_id, count(trainingsessions.trainer_id) AS session_count FROM Users, Trainingsessions WHERE trainingsessions.cancelled = false AND users.id = trainingsessions.member_id AND users.id=? GROUP BY trainingsessions.trainer_id ORDER BY count(trainingsessions.trainer_id) DESC";
 
         try{
             connection = PostgresConnection.connect();
