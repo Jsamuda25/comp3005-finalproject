@@ -60,7 +60,9 @@ public class Member extends User {
         System.out.println("3. Name");
         System.out.println("4. Exit");
         System.out.print("Enter your choice as a number: ");
+
         int response = scanner.nextInt();
+
 
         if (response == 1) {
             modifyUsername();
@@ -198,7 +200,9 @@ public class Member extends User {
         System.out.println("4. Exit");
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
+
         int response = scanner.nextInt();
+
         if (response == 1) {
             viewHealthMetrics();
         } else if (response == 2) {
@@ -463,6 +467,7 @@ public class Member extends User {
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
         int response = scanner.nextInt();
+        scanner.nextLine();
 
         if (response == 1) {
             viewFitnessGoals();
@@ -731,10 +736,11 @@ public class Member extends User {
         System.out.println("2. Schedule session with trainer");
         System.out.println("3. Reschedule session with trainer");
         System.out.println("4. Cancel session with trainer");
-        System.out.println("5. View scheduled sessions");
+        System.out.println("5. View scheduling history");
         System.out.println("6. Exit");
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
+
         int response = scanner.nextInt();
         scanner.nextLine();
 
@@ -748,7 +754,7 @@ public class Member extends User {
         } else if (response == 4) {
             cancelSession();
         } else if (response == 5) {
-            viewPersonalSessions();
+            viewSchedulingHistory();
         } else if (response != 6) {
             System.out.println("Invalid selection");
             scheduleManagement();
@@ -758,26 +764,35 @@ public class Member extends User {
     /**
      * Views the available classes for the member to join.
      */
-    private void viewAvailableClasses() {
+    private boolean viewAvailableClasses() {
         connection = PostgresConnection.connect();
+
         try {
-            String query = "SELECT * FROM class ORDER BY start_date";
+            String query = "SELECT * FROM class WHERE start_date >= ? ORDER BY start_date";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            preparedStatement.setTimestamp(1, currentTimestamp);
             ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-//                System.out.println("Scheduled classes:");
-                System.out.println("Class ID: " + resultSet.getInt("class_id"));
-                System.out.println("Class Name: " + resultSet.getString("class_name"));
-                System.out.println("Trainer ID: " + resultSet.getInt("trainer_id"));
-                System.out.println("Start Date: " + resultSet.getDate("start_date"));
-                System.out.println("End Date: " + resultSet.getDate("end_date"));
-                System.out.println("room ID: " + resultSet.getInt("room_id"));
-                System.out.println("Room Number " + getRoomNumber(resultSet.getInt("room_id")));
-                System.out.println();
+            if(!resultSet.next()){
+                return false;
+            }
+            else {
+                do{
+                    System.out.println("Class ID: " + resultSet.getInt("class_id"));
+                    System.out.println("Class Name: " + resultSet.getString("class_name"));
+                    System.out.println("Trainer ID: " + resultSet.getInt("trainer_id"));
+                    System.out.println("Start Date: " + resultSet.getDate("start_date"));
+                    System.out.println("End Date: " + resultSet.getDate("end_date"));
+                    System.out.println("room ID: " + resultSet.getInt("room_id"));
+                    System.out.println("Room Number " + getRoomNumber(resultSet.getInt("room_id")));
+                    System.out.println();
+                }
+                while(resultSet.next());
             }
         } catch (SQLException e) {
             System.err.println("Error retrieving class data.");
         }
+        return true;
     }
 
     /**
@@ -786,7 +801,11 @@ public class Member extends User {
     public void joinClass() {
         connection = PostgresConnection.connect();
         System.out.println("--- Available Classes ---");
-        viewAvailableClasses();
+
+        if(!viewAvailableClasses()){
+            System.out.println("There are currently no classes available.\n");
+            return;
+        }
 
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Enter the ID of the class you would like to join, otherwise input 0: ");
@@ -854,22 +873,53 @@ public class Member extends User {
 
     }
 
-    /**
-     * Displays the member's personal sessions.
-     */
-    public void viewPersonalSessions() {
-        System.out.println("--- View Your Scheduled Sessions ---");
 
-        System.out.println("Training Sessions");
+
+    public boolean viewTrainingSessions(){
+        System.out.println("-- Your scheduled Training Sessions ---");
         try {
             connection = PostgresConnection.connect();
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
             String query = "SELECT session_id, trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND cancelled = ?";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
             statement.setBoolean(2, false);
             ResultSet res = statement.executeQuery();
+            if(!res.next()){
+                System.out.println("You have no scheduled training sessions to modify.\n");
+                return false;
+            }
+            else{
+                do{
+                    System.out.println("Training session (ID#" + res.getInt("session_id") + ") with trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
+                }
+                while(res.next());
+            }
+            System.out.println();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        return true;
+    }
+    /**
+     * Displays the member's personal sessions and classes.
+     */
+    public void viewSchedulingHistory() {
+        System.out.println("---  Scheduling History ---");
+
+        System.out.println("Training Sessions");
+        try {
+            connection = PostgresConnection.connect();
+            String query = "SELECT * FROM trainingsessions WHERE member_id = ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet res = statement.executeQuery();
             while (res.next()) {
-                System.out.println("Training session (ID#" + res.getInt("session_id") + ") with trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
+                String cancelled = " ";
+                if(res.getBoolean("cancelled")){
+                    cancelled = " (cancelled)";
+                }
+                System.out.println("Training session (ID#" + res.getInt("session_id") + ") with trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date") + cancelled);
             }
             System.out.println();
         } catch (Exception e) {
@@ -896,17 +946,22 @@ public class Member extends User {
      * Allows the member to reschedule a session.
      */
     public void rescheduleSession() {
-        viewPersonalSessions();
-        viewTrainerAvailability();
+        viewTrainingSessions();
+        if(!viewTrainerAvailability()){
+            return;
+        }
         Scanner scanner = InputScanner.getInstance();
         connection = PostgresConnection.connect();
 
         System.out.print("Enter the ID of session you would like to reschedule: ");
         int session_id = scanner.nextInt();
         scanner.nextLine();
+
         System.out.print("Enter trainer ID: ");
-        int trainer_id = scanner.nextInt();
+
+        int trainer_id =  scanner.nextInt();
         scanner.nextLine();
+
         System.out.print("Enter Date (YYYY-MM-DD): ");
         String date = scanner.nextLine();
         System.out.print("Enter start time (HH:MM:SS): ");
@@ -963,7 +1018,7 @@ public class Member extends User {
      * Allows the member to cancel a session.
      */
     public void cancelSession() {
-        viewPersonalSessions();
+        viewTrainingSessions();
         Scanner scanner = InputScanner.getInstance();
         connection = PostgresConnection.connect();
         System.out.print("Enter the ID of session you would like to cancel: ");
@@ -995,8 +1050,10 @@ public class Member extends User {
         System.out.println("--- Book session --- ");
         System.out.print("Enter Trainer ID: ");
         Scanner scanner = InputScanner.getInstance();
-        int trainer_id = scanner.nextInt();
+
+        int trainer_id =  scanner.nextInt();
         scanner.nextLine();
+
         System.out.print("Enter Date (YYYY-MM-DD): ");
         String date = scanner.nextLine();
         System.out.print("Enter start time (HH:MM:SS): ");
@@ -1004,7 +1061,6 @@ public class Member extends User {
         System.out.print("Enter end time (HH:MM:SS): ");
         String end_time = scanner.nextLine();
 
-        //take error-checking functions from Nahom's class
         Timestamp start_timestamp;
         Timestamp end_timestamp;
         try {
@@ -1107,17 +1163,21 @@ public class Member extends User {
         connection = PostgresConnection.connect();
         System.out.println("See trainer availability below: ");
         try {
-            String query = "SELECT * FROM TrainerAvailability";
-            Statement stmt = connection.createStatement();
-            stmt.executeQuery(query);
-            ResultSet resultSet = stmt.getResultSet();
+            String query = "SELECT * FROM TrainerAvailability WHERE start_time >= ?";
+            PreparedStatement stmt = connection.prepareStatement(query);
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            stmt.setTimestamp(1, currentTimestamp);
+            ResultSet resultSet = stmt.executeQuery();
 
-            if (resultSet == null) {
+            if (!resultSet.next()) {
                 System.out.println("Sorry, there are currently no available time slots.\n");
                 return false;
             }
-            while (resultSet.next()) {
-                System.out.println("Trainer ID: " + resultSet.getInt("trainer_id") + ", available " + resultSet.getTimestamp("start_time") + " to " + resultSet.getTimestamp("end_time"));
+            else{
+                do {
+                    System.out.println("Trainer ID: " + resultSet.getInt("trainer_id") + ", available " + resultSet.getTimestamp("start_time") + " to " + resultSet.getTimestamp("end_time"));
+                }
+                while(resultSet.next());
             }
             System.out.println("\n");
         } catch (Exception e) {
@@ -1221,6 +1281,79 @@ public class Member extends User {
             }
         } catch (Exception e) {
             System.out.println(e);
+        }
+    }
+
+
+    public  void viewUpcomingEvents(){
+        System.out.println("--- Your Upcoming Training Sessions ---");
+        try{
+            connection = PostgresConnection.connect();
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            String query = "SELECT trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND start_date >= ? AND cancelled = false";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setTimestamp(2, currentTimestamp);
+            ResultSet res = statement.executeQuery();
+
+            while (res.next()) {
+                System.out.println("Session with Trainer " + res.getInt("trainer_id") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date"));
+            }
+            System.out.println("\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+        System.out.println("--- Your Upcoming Classes ---");
+
+        try{
+            connection = PostgresConnection.connect();
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            String query = "SELECT * FROM classmembers JOIN class ON classmembers.class_id = class.class_id WHERE member_id = ? AND class.start_date >= ?";
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            statement.setTimestamp(2, currentTimestamp);
+            ResultSet res = statement.executeQuery();
+
+            while (res.next()) {
+                System.out.println(res.getString("class_name") + " from " + res.getTimestamp("start_date") + " to " + res.getTimestamp("end_date") + "in room number " +  getRoomNumber(res.getInt("room_id")));
+            }
+            System.out.println("\n");
+
+
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+    }
+
+    public void viewFavouriteTrainers(){
+        System.out.println("Here are the trainers you have worked with the most:");
+        String query = "SELECT trainer_id, count(trainingsessions.trainer_id) AS session_count FROM Users, Trainingsessions WHERE users.id = trainingsessions.member_id AND users.id=? GROUP BY trainingsessions.trainer_id ORDER BY count(trainingsessions.trainer_id) DESC";
+
+        try{
+            connection = PostgresConnection.connect();
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet resultSet = statement.executeQuery();
+            if(!resultSet.next()){
+                System.out.println("You haven't worked with any trainers yet.");
+            }
+            else {
+                do{
+                    System.out.println("Trainer " + resultSet.getInt("trainer_id") + ": "  + resultSet.getInt("session_count") + " sessions");
+                }
+                while(resultSet.next());
+            }
+            System.out.println("\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
         }
     }
 }

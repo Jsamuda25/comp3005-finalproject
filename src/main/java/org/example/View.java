@@ -143,7 +143,7 @@ public class View {
      * @return the user's choice
      */
     public int memberDashboardMenu() {
-        ArrayList<String> options = new ArrayList<>(Arrays.asList("Display Exercise Routines", "Fitness Achievements", "Health Statistics", "Back"));
+        ArrayList<String> options = new ArrayList<>(Arrays.asList("Display Exercise Routines", "Fitness Achievements", "Health Statistics", "Upcoming Events", "Favorite Trainers","Back"));
         menu(options);
         return getChoice(options);
     }
