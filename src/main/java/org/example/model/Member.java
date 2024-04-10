@@ -467,8 +467,6 @@ public class Member extends User {
         System.out.print("Enter choice as integer: ");
         Scanner scanner = InputScanner.getInstance();
         int response = scanner.nextInt();
-        scanner.nextLine();
-
         if (response == 1) {
             viewFitnessGoals();
         } else if (response == 2) {
@@ -810,7 +808,6 @@ public class Member extends User {
         Scanner scanner = InputScanner.getInstance();
         System.out.print("Enter the ID of the class you would like to join, otherwise input 0: ");
         int class_id = scanner.nextInt();
-        scanner.nextLine();
 
         if (class_id == 0) {  // Exit
             scheduleManagement();
@@ -836,7 +833,6 @@ public class Member extends User {
         System.out.println("Pay the fee to confirm enrollment");
         System.out.print("Input 1 to confirm payment, otherwise you will be removed from the class: ");
         int resPay = scanner.nextInt();
-        scanner.nextLine();
         Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
 
         if (resPay == 1) {
