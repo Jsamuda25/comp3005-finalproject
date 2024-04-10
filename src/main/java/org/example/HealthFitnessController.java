@@ -115,7 +115,9 @@ public class HealthFitnessController {
                     member.viewFavouriteTrainers();
                     break;
                 case 6:
-                    member.viewFavouriteTrainers();
+                    member.viewTransactionHistory();
+                    break;
+                case 7:
                     return;
                 default:
                     System.out.println("Invalid choice. Please enter a number between 1 and 4.");

@@ -1356,4 +1356,81 @@ public class Member extends User {
             return;
         }
     }
+
+    public void viewTransactionHistory(){
+
+        System.out.println("--- Transaction History ---");
+        String query = "SELECT fee, type_of_fee, paid, date FROM billing WHERE billing.member_id = ?";
+
+        try{
+            connection = PostgresConnection.connect();
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            ResultSet resultSet = statement.executeQuery();
+            if(!resultSet.next()){
+                System.out.println("You don't have any payment history.");
+            }
+            else {
+                do{
+                    String fee_type;
+                    if(resultSet.getInt("type_of_fee") == 0){
+                        fee_type = "Membership Fee: ";
+                    }
+                    else if(resultSet.getInt("type_of_fee") == 1){
+                        fee_type = "Class Fee: ";
+                    }
+                    else{
+                        fee_type = "Training Session Fee: ";
+                    }
+                    String paid;
+                    if(resultSet.getBoolean("paid") == false){
+                        paid = " (unpaid)";
+                    }
+                    else{
+                        paid = " (paid)";
+                    }
+                    System.out.println(fee_type + "$" + resultSet.getInt("fee") + " recorded " + resultSet.getTimestamp("date") + paid);
+                }
+                while(resultSet.next());
+            }
+            System.out.println(" ");
+
+            connection = PostgresConnection.connect();
+            query = "SELECT sum(fee) AS total_paid FROM billing WHERE billing.member_id = ? AND billing.paid = true";
+            statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            resultSet = statement.executeQuery();
+            int total_paid = 0;
+            if(!resultSet.next()){
+                return;
+            }
+            else {
+                total_paid = resultSet.getInt("total_paid");
+            }
+
+            connection = PostgresConnection.connect();
+            query = "SELECT sum(fee) AS total_unpaid FROM billing WHERE billing.member_id = ? AND billing.paid = false";
+            statement = connection.prepareStatement(query);
+            statement.setInt(1, getUserID());
+            resultSet = statement.executeQuery();
+
+            int total_unpaid = 0;
+            if(!resultSet.next()){
+                return;
+            }
+            else {
+                total_unpaid = resultSet.getInt("total_unpaid");
+            }
+            System.out.println("Total of all payments: $" + total_paid);
+            System.out.println("Total unpaid: $" + total_unpaid);
+
+            System.out.println("\n");
+        }
+        catch (Exception e){
+            System.out.println(e);
+            return;
+        }
+
+
+    }
 }
