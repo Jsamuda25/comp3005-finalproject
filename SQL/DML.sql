@@ -56,8 +56,8 @@ INSERT INTO ClassMembers (class_id, member_id) VALUES
 INSERT INTO RoomBooking (room_id, class_id, date, start_time, end_time) VALUES
 (1, 1, '2024-04-01', '09:00:00', '10:00:00'),
 (2, 2, '2024-04-02', '10:00:00', '11:00:00'),
-(1, 3, '2024-04-14', '10:00:00', '11:00:00'),
-(2, 4, '2024-05-11', '09:00:00', '10:00:00'),
+(2, 3, '2024-04-14', '10:00:00', '11:00:00'),
+(1, 4, '2024-05-11', '09:00:00', '10:00:00'),
 (2, 5, '2024-05-14', '10:00:00', '11:00:00');
 
 -- Type of fee, 0 is Membership, 1 is Class, 2 is Training Session
