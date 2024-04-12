@@ -141,7 +141,7 @@ public class HealthFitnessController {
                     admin.viewBillingAndPayment();
                     break;
                 case 2:
-                    admin.processPayment();
+                    admin.processRefunds();
                     break;
                 case 3:
                     return;
