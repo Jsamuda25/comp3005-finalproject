@@ -870,7 +870,9 @@ public class Member extends User {
     }
 
 
-
+/**
+ * Allows the current member to view all their uncancelled training sessions.
+ */
     public boolean viewTrainingSessions(){
         System.out.println("-- Your scheduled Training Sessions ---");
         try {
@@ -1280,13 +1282,16 @@ public class Member extends User {
         }
     }
 
+    /**
+     * This function shows all upcoming events for the member that is logged in, including personal sessions and group classes.
+     */
 
-    public  void viewUpcomingEvents(){
+    public void viewUpcomingEvents(){
         System.out.println("--- Your Upcoming Training Sessions ---");
         try{
             connection = PostgresConnection.connect();
             Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
-            String query = "SELECT trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND start_date >= ? AND cancelled = false";
+            String query = "SELECT trainer_id, start_date, end_date FROM trainingsessions WHERE member_id = ? AND start_date > ? AND cancelled = false";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setInt(1, getUserID());
             statement.setTimestamp(2, currentTimestamp);
@@ -1327,6 +1332,9 @@ public class Member extends User {
 
     }
 
+    /**
+     * The viewFavouriteTrainers() function shows all the trainers that the current member has had sessions with and the number of times it has occured.
+     */
     public void viewFavouriteTrainers(){
         System.out.println("Here are the trainers you have worked with the most:");
         String query = "SELECT trainer_id, count(trainingsessions.trainer_id) AS session_count FROM Users, Trainingsessions WHERE trainingsessions.cancelled = false AND users.id = trainingsessions.member_id AND users.id=? GROUP BY trainingsessions.trainer_id ORDER BY count(trainingsessions.trainer_id) DESC";
@@ -1353,6 +1361,10 @@ public class Member extends User {
         }
     }
 
+
+/**
+ * The viewTransactionHistory() function lets the current member view their transaction history, including all paid and unpaid items and the total amount they have paid/owe the gym.
+ */
     public void viewTransactionHistory(){
 
         System.out.println("--- Transaction History ---");
