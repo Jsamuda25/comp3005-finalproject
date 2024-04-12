@@ -247,6 +247,27 @@ public class Trainer {
         }
     }
 
+    /**
+     * Allow trainer to add exercise routines
+     */
+    public static void addExerciseRoutine() {
+        Scanner scanner = InputScanner.getInstance();
+        System.out.print("Enter the name of the exercise routine: ");
+        String routineName = scanner.nextLine().trim();
+        System.out.print("Enter the description of the exercise routine: ");
+        String routineDescription = scanner.nextLine().trim();
+
+        try {
+            String insQuery = "INSERT INTO ExerciseRoutines (name, instruction) VALUES (?, ?)";
+            PreparedStatement statement = connection.prepareStatement(insQuery);
+            statement.setString(1, routineName);
+            statement.setString(2, routineDescription);
+            statement.executeUpdate();
+            System.out.println("Exercise routine added successfully!");
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
 
 }
 
