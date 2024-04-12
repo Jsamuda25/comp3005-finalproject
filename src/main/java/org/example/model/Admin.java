@@ -756,9 +756,9 @@ public class Admin extends User {
      * It first displays all the unpaid bills, then prompts the admin to enter the ID of the bill they want to process payment for.
      * The method then updates the paid status of the bill in the database.
      */
-    public void processPayment() {
+    public void processRefunds() {
         // Print out all Payments that are not paid
-        System.out.println("Payments to Process: ");
+        System.out.println("Payments to Process Refunds: ");
         try {
             String query = "SELECT billing_id, name, fee, type_of_fee, date FROM billing " +
                            "JOIN public.users u on u.id = billing.member_id " +
@@ -782,7 +782,7 @@ public class Admin extends User {
         }
 
         // Get user choice
-        System.out.print("Enter the billing ID to process payment or -1 to go Back: ");
+        System.out.print("Enter the billing ID to process refund payment or -1 to go Back: ");
         Optional<Integer> billingId = View.getIntegerInput();
         while (billingId.isEmpty()) {
             System.out.println("Invalid input. Please enter a number.");
@@ -790,16 +790,18 @@ public class Admin extends User {
         }
         if (billingId.get() == -1) return;
 
-        // Process Payment
+        // Process Refund
         try {
-            String query = "UPDATE billing SET paid = true WHERE billing_id = ?";
+            String query = "DELETE FROM billing WHERE billing_id = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, billingId.get());
             preparedStatement.executeUpdate();
-            System.out.println("Payment processed successfully.");
+            System.out.println("Refund Processed.");
         } catch (SQLException e) {
-            System.err.println("Error processing payment. (Wrong Billing ID)");
+            e.printStackTrace();
+            System.err.println("Error processing refund.");
         }
+
     }
 
     /**
