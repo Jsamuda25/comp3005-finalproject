@@ -24,6 +24,6 @@ How to compile and run:
 - Within the IDE, navigate to the Main.java file inside the src/main/java/org/example directory.
 - Press the run keyword or the green play button to compile and run the Main.java program.
 
-Demo video link: 
+Demo video link: https://youtu.be/uvTw9TqduVI
 
 
