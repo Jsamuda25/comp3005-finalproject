@@ -16,7 +16,7 @@ Setup instructions:
 - Ensure your environment/machine is configured to work with JBDC and PostgreSQL.
 - Create database in PostgreSQL using DDL.sql file.
 - Insert initial data in database using the DML.sql file.
-- Ensure the values of the String password, user, and url variables in the code match those within your PostgreSQL environment.
+- Ensure the values of the String password, user, and url variables in the PostgresConnection.java class match those within your PostgreSQL environment.
 
 How to compile and run:
 - Ensure PostgreSQL is running on your computer.
