@@ -6,7 +6,7 @@ Group Members Jordon, Nahom, Paul
 - 101222274
 - 101228980
 
-Purpose: Java application that acts a Health and Fitness Club Management System.
+Purpose: Java application that acts as Health and Fitness Club Management System and uses a relational database for persistent storage.
 
 Key contents:
 - The SQL folder contains DML.sql and DDL.sql files.
