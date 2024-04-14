@@ -13,6 +13,7 @@ Java application that acts as a Health and Fitness Club Management System and us
 #### Key contents:
 - The SQL folder contains DML.sql and DDL.sql files.
 - The src/main/java/org/example folder contains the application's source code.
+- Video link found below
 
 #### Setup instructions:
 - Ensure your environment/machine is configured to work with JBDC and PostgreSQL.
