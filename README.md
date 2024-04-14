@@ -6,6 +6,9 @@ Jordon, Nahom, Paul
 - 101219909
 - 101222274
 - 101228980
+  
+#### Demo video link: 
+https://youtu.be/uvTw9TqduVI
 
 #### Purpose: 
 Java application that acts as a Health and Fitness Club Management System and uses a relational database for persistent storage.
@@ -13,7 +16,6 @@ Java application that acts as a Health and Fitness Club Management System and us
 #### Key contents:
 - The SQL folder contains DML.sql and DDL.sql files.
 - The src/main/java/org/example folder contains the application's source code.
-- Video link found below
 
 #### Setup instructions:
 - Ensure your environment/machine is configured to work with JBDC and PostgreSQL.
@@ -27,7 +29,6 @@ Java application that acts as a Health and Fitness Club Management System and us
 - Within the IDE, navigate to the Main.java file inside the src/main/java/org/example directory.
 - Press the run keyword or the green play button to compile and run Main.java
 
-#### Demo video link: 
-https://youtu.be/uvTw9TqduVI
+
 
 
