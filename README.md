@@ -1,6 +1,6 @@
 # Fitness Central
 
-Java application that acts as a Health and Fitness Club Management System and uses a relational database for persistent storage.
+Java application that acts as a Health and Fitness Club Management System and uses PostgreSQL for persistent storage.
 
 #### Key contents:
 - The SQL folder contains DML.sql and DDL.sql files.
