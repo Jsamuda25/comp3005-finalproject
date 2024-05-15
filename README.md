@@ -1,14 +1,4 @@
-# COMP 3005 Final Project - Version 2
-#### Group Members:
-Jordon, Nahom, Paul
-
-#### Student Numbers:
-- 101219909
-- 101222274
-- 101228980
-  
-#### Demo video link: 
-https://youtu.be/uvTw9TqduVI
+# Fitness Central
 
 #### Purpose: 
 Java application that acts as a Health and Fitness Club Management System and uses a relational database for persistent storage.
