@@ -1,6 +1,5 @@
 # Fitness Central
 
-#### Purpose: 
 Java application that acts as a Health and Fitness Club Management System and uses a relational database for persistent storage.
 
 #### Key contents:
